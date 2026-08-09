@@ -154,6 +154,25 @@ function olimp_setup() {
 	add_image_size( 'olimp-card-3x', 1600, 1200, true );
 }
 
+add_action( 'template_redirect', 'olimp_front_title' );
+
+/**
+ * Снимает печать заголовка на главной.
+ *
+ * Заголовок главной задан прямо в разметке — она собирается из src/index.html,
+ * где title стоит рядом с описанием и og-тегами, одним смысловым куском.
+ * WordPress с включённым title-tag печатал бы второй, и в head оказывалось
+ * два <title>. Убирать сам title-tag нельзя: на остальных страницах заголовок
+ * печатать некому.
+ *
+ * @return void
+ */
+function olimp_front_title() {
+	if ( is_front_page() ) {
+		remove_action( 'wp_head', '_wp_render_title_tag', 1 );
+	}
+}
+
 add_action( 'wp_head', 'olimp_verification', 1 );
 
 /**
