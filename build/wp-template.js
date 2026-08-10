@@ -35,8 +35,8 @@ function toPhp(html) {
     .replace(/<meta property="og:url" content="[^"]*">/, '<meta property="og:url" content="<?php echo esc_url( home_url( \'/\' ) ); ?>">')
     .replace(/<meta property="og:image" content="[^"]*">/, '<meta property="og:image" content="<?php echo esc_url( olimp_asset( \'og.jpg\' ) ); ?>">')
     // Те же два адреса внутри разметки организации
-    .replace('"url": "https://degooon.github.io/olump/"', '"url": "<?php echo esc_url( home_url( \'/\' ) ); ?>"')
-    .replace('"image": "https://degooon.github.io/olump/og.jpg"', '"image": "<?php echo esc_url( olimp_asset( \'og.jpg\' ) ); ?>"')
+    .replace('"url": "https://olimp-mebel26.ru/"', '"url": "<?php echo esc_url( home_url( \'/\' ) ); ?>"')
+    .replace('"image": "https://olimp-mebel26.ru/og.jpg"', '"image": "<?php echo esc_url( olimp_asset( \'og.jpg\' ) ); ?>"')
     .replace(/<link rel="canonical" href="[^"]*">/, '<link rel="canonical" href="<?php echo esc_url( home_url( \'/\' ) ); ?>">')
     // Ссылка на политику конфиденциальности. В разметке стоит полный адрес —
     // он нужен статической сборке, где своей страницы нет. Здесь берём адрес

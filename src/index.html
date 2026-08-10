@@ -12,8 +12,9 @@
 
 <!--
   Превью ссылки в Telegram, MAX, VK и других соцсетях.
-  og:url и og:image требуют полного адреса — при переезде на свой домен
-  замени https://degooon.github.io/olump/ на него.
+  og:url и og:image требуют полного адреса, относительный тут не работает.
+  В теме WordPress эти адреса подменяются на home_url() при сборке —
+  здесь стоит рабочий домен, потому что статическая сборка о нём не знает.
 -->
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Мебельный склад «Олимп»">
@@ -21,9 +22,9 @@
 <meta property="og:title" content="Мебельный склад «Олимп» — мебель для дома">
 <meta property="og:description" content="Диваны, шкафы, столы, кровати и кухни в наличии. Доставка по России и сборка.">
 <!-- Каноническая ссылка: защита от дублей вида «с www» и «без www» -->
-<link rel="canonical" href="https://degooon.github.io/olump/">
-<meta property="og:url" content="https://degooon.github.io/olump/">
-<meta property="og:image" content="https://degooon.github.io/olump/og.jpg">
+<link rel="canonical" href="https://olimp-mebel26.ru/">
+<meta property="og:url" content="https://olimp-mebel26.ru/">
+<meta property="og:image" content="https://olimp-mebel26.ru/og.jpg">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta property="og:image:alt" content="Мебельный склад «Олимп»">
@@ -42,8 +43,8 @@
   "@type": "FurnitureStore",
   "name": "Мебельный склад «Олимп»",
   "description": "Диваны, шкафы, столы, кровати и кухни в наличии. Доставка по России и сборка.",
-  "url": "https://degooon.github.io/olump/",
-  "image": "https://degooon.github.io/olump/og.jpg",
+  "url": "https://olimp-mebel26.ru/",
+  "image": "https://olimp-mebel26.ru/og.jpg",
   "telephone": "+79620018222",
   "address": {
     "@type": "PostalAddress",

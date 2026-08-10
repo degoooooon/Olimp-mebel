@@ -12,8 +12,9 @@
 
 <!--
   Превью ссылки в Telegram, MAX, VK и других соцсетях.
-  og:url и og:image требуют полного адреса — при переезде на свой домен
-  замени https://degooon.github.io/olump/ на него.
+  og:url и og:image требуют полного адреса, относительный тут не работает.
+  В теме WordPress эти адреса подменяются на home_url() при сборке —
+  здесь стоит рабочий домен, потому что статическая сборка о нём не знает.
 -->
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Мебельный склад «Олимп»">
