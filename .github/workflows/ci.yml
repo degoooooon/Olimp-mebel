@@ -26,12 +26,15 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
+      # Версия LTS, а не последняя: на ней проект и должен собираться у любого,
+      # кто возьмёт репозиторий. Node 20 здесь стоять больше не может —
+      # поддержка кончилась в апреле 2026, обновления безопасности не выходят.
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
-          node-version: '20'
+          node-version: '24'
           cache: 'npm'
 
       - name: Install dependencies
