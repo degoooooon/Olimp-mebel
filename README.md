@@ -12,7 +12,7 @@
 и `src/js/` собираются в два разных результата:
 
 ```bash
-npm run build         # статический сайт в dist/ — для просмотра и GitHub Pages
+npm run build         # статический сайт в dist/ — для просмотра без WordPress
 npm run build:theme   # тема WordPress в wp-theme/olimp/ — то, что стоит на хостинге
 ```
 

@@ -1,0 +1,51 @@
+name: Проверки
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+# Раньше этот файл публиковал статику на GitHub Pages. Публикация убрана:
+# рабочий сайт стоит на своём хостинге, а вторая копия каталога в интернете
+# никому не нужна — она молча устаревает и показывает старые цены.
+# Осталась проверка: линтер и обе сборки на каждый пуш.
+
+# Ничего, кроме чтения кода, проверкам не требуется.
+permissions:
+  contents: read
+
+# Новый пуш в ветку отменяет проверку предыдущего — нет смысла ждать
+# результат по коду, который уже переписан.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Build project
+        run: npm run build
+
+      # Тема — это то, что реально стоит на хостинге, поэтому её сборку тоже
+      # проверяем. Ломается она обычно не в вёрстке, а в build/wp-template.js:
+      # там подмены ищут точные строки из index.html, и правка разметки
+      # тихо оставляет подмену без работы.
+      - name: Build WordPress theme
+        run: npm run build:theme
