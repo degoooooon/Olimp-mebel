@@ -51,6 +51,9 @@ npm run build:theme
 - [docs/prompt.md](docs/prompt.md) — правила процесса, выведенные
   из реальных ошибок этого проекта
 - [docs/prompt-code.md](docs/prompt-code.md) — стиль кода с примерами
+- [docs/code-criteria.md](docs/code-criteria.md) — по чему принимать готовое.
+  По каждому пункту ответ один из двух: «проверил, вот вывод» или
+  «не проверял». Третьего нет
 - [docs/journal.md](docs/journal.md) — что ломалось и почему
 - [docs/catalog-data.md](docs/catalog-data.md) — формат каталога;
   менять его надо с обеих сторон сразу
