@@ -56,7 +56,7 @@ grep -ro 'console\.log' dist/assets/*.js | wc -l   # 0
 преобразуется кодом. Для этого:
 
 ```bash
-grep -c 'home_url' wp-theme/olimp/front-page.php          # 4
+grep -c 'home_url' wp-theme/olimp/front-page.php          # 3
 grep -c 'olimp-mebel26\.ru' wp-theme/olimp/front-page.php # 0
 ```
 

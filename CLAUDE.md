@@ -26,7 +26,7 @@ npm run build:theme   # тема WordPress в wp-theme/olimp/
 Поэтому после правок в `index.html` сверяйся с контрольными числами:
 
 ```bash
-grep -c 'home_url' wp-theme/olimp/front-page.php          # 4
+grep -c 'home_url' wp-theme/olimp/front-page.php          # 3
 grep -c 'olimp-mebel26\.ru' wp-theme/olimp/front-page.php # 0
 grep -cE 'olimp_(cards|tiles|chips|count|catalog_json)\(\)' \
   wp-theme/olimp/front-page.php                           # 5
@@ -34,6 +34,10 @@ grep -cE 'olimp_(cards|tiles|chips|count|catalog_json)\(\)' \
 
 Разошлось — значит подмена в `wp-template.js` промахнулась мимо строки,
 которую ты только что изменил.
+
+Число `home_url` было 4, пока в шаблон переносились комментарии разметки:
+четвёртым совпадением шло слово `home_url()` внутри пояснения, а не вызов.
+Комментарии в тему больше не попадают — считаются только настоящие вызовы.
 
 ## Перед «готово»
 

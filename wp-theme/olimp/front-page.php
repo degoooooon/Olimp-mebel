@@ -10,18 +10,11 @@
 <link rel="apple-touch-icon" href="<?php echo esc_url( olimp_asset( 'apple-touch-icon.png' ) ); ?>">
 <meta name="theme-color" content="#B14E2B">
 
-<!--
-  Превью ссылки в Telegram, MAX, VK и других соцсетях.
-  og:url и og:image требуют полного адреса, относительный тут не работает.
-  В теме WordPress эти адреса подменяются на home_url() при сборке —
-  здесь стоит рабочий домен, потому что статическая сборка о нём не знает.
--->
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Мебельный склад «Олимп»">
 <meta property="og:locale" content="ru_RU">
 <meta property="og:title" content="Мебельный склад «Олимп» — мебель для дома">
 <meta property="og:description" content="Диваны, шкафы, столы, кровати и кухни в наличии. Доставка по России и сборка.">
-<!-- Каноническая ссылка: защита от дублей вида «с www» и «без www» -->
 <link rel="canonical" href="<?php echo esc_url( home_url( '/' ) ); ?>">
 <meta property="og:url" content="<?php echo esc_url( home_url( '/' ) ); ?>">
 <meta property="og:image" content="<?php echo esc_url( olimp_asset( 'og.jpg' ) ); ?>">
@@ -30,11 +23,6 @@
 <meta property="og:image:alt" content="Мебельный склад «Олимп»">
 <meta name="twitter:card" content="summary_large_image">
 
-<!--
-  Разметка организации для поисковиков: кто это, чем торгует, куда звонить.
-  Без неё сайт для робота — просто страница со словом «мебель».
-  Адрес сайта тема подменяет на настоящий при сборке.
--->
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -57,19 +45,12 @@
 }
 </script>
 
-<!--
-  Блоки с классом reveal ждут скрипта, который покажет их при прокрутке.
-  Если скриптов нет — показываем сразу, иначе текст просто не увидят.
-  important обязателен: сборщик вставляет свою таблицу стилей ниже этой,
-  и без него правило с той же силой, но идущее позже, перекрыло бы наше.
--->
 <noscript><style>.reveal { opacity: 1 !important; }</style></noscript>
 <?php wp_head(); ?>
 </head>
 <body <?php body_class(); ?>>
 
 
-<!-- Шапка -->
 <header class="header">
   <div class="container header__inner">
     <a class="logo" href="#top" aria-label="Мебельный склад «Олимп» — на главную">
@@ -123,7 +104,6 @@
 
 <main id="top">
 
-  <!-- Герой -->
   <section class="hero">
     <div class="container">
       <span class="hero__omega" aria-hidden="true">&Omega;</span>
@@ -150,27 +130,15 @@
     </div>
   </section>
 
-  <!-- Быстрые категории -->
   <section class="cats" aria-label="Категории каталога">
     <div class="container">
-      <!--
-        Плитки категорий собирает cats.js из списка CATEGORIES в data.js.
-        Листается пальцем, трекпадом и полосой прокрутки под лентой.
-      -->
       <div class="cats__grid" id="cats-grid" tabindex="0" role="group" aria-label="Категории, прокручиваемый список"><?php olimp_tiles(); ?></div>
-      <!--
-        Своя полоса вместо системной: системная и на macOS, и на iOS всплывает
-        только во время прокрутки, а нужна постоянная подсказка. Состоянием
-        управляет cats.js; для чтения с экрана она не нужна — список выше
-        и так объявлен прокручиваемым.
-      -->
       <div class="cats__scrollbar" id="cats-bar" aria-hidden="true" hidden>
         <span class="cats__thumb" id="cats-thumb"></span>
       </div>
     </div>
   </section>
 
-  <!-- Каталог -->
   <section class="section" id="catalog">
     <div class="container">
       <div class="section__head reveal">
@@ -186,7 +154,6 @@
 
       <div class="catalog__layout">
 
-        <!-- Фильтры -->
         <aside class="filters" id="filters-panel" aria-label="Фильтры каталога">
           <form id="filters-form">
             <div class="search">
@@ -197,7 +164,6 @@
 
             <div class="fgroup" role="group" aria-labelledby="f-cat">
               <h3 class="fgroup__title" id="f-cat">Категория</h3>
-              <!-- Переключатели собирает catalog.js из того же списка CATEGORIES -->
               <div class="chips" id="cat-chips"><?php olimp_chips(); ?></div>
             </div>
 
@@ -227,17 +193,12 @@
           </form>
         </aside>
 
-        <!-- Витрина -->
         <div>
           <div class="toolbar">
             <span class="toolbar__count" id="count" role="status"><?php olimp_count(); ?></span>
             <div class="toolbar__right">
               <div class="sortwrap">
                 <span class="sortwrap__label" id="sort-label">Сортировка</span>
-                <!--
-                  Свой список вместо select: системный на iOS выглядит иначе
-                  и открывается барабаном снизу. Роли и клавиатура — в sort.js
-                -->
                 <div class="sort" id="sort" data-value="pop">
                   <button class="sort__button" type="button" id="sort-button" role="combobox"
                     aria-haspopup="listbox" aria-expanded="false" aria-controls="sort-list"
@@ -258,7 +219,6 @@
 
           <div class="grid" id="grid"><?php olimp_cards(); ?></div>
 
-          <!-- Каталог выводится порциями: подпись кнопки ставит catalog.js -->
           <div class="more" id="more" hidden>
             <button class="btn btn--ghost" type="button" id="more-btn"></button>
           </div>
@@ -275,7 +235,6 @@
     </div>
   </section>
 
-  <!-- Преимущества -->
   <section class="features" id="features" aria-label="Преимущества">
     <div class="container">
       <div class="features__grid">
@@ -297,7 +256,6 @@
 
 </main>
 
-<!-- Подвал -->
 <footer class="footer" id="contacts">
   <div class="container">
     <div class="footer__grid">
@@ -348,11 +306,6 @@
         <h4 class="footer__heading">Контакты</h4>
         <ul class="footer__list">
           <li><a class="footer__link" href="tel:+79620018222">+7 (962) 001-82-22</a></li>
-          <!--
-            Ссылка на карты, а не просто текст: с телефона это один тап
-            до маршрута. Для склада, куда приезжают смотреть мебель,
-            это важнее любого другого контакта.
-          -->
           <li>
             <a class="footer__link" href="https://yandex.ru/maps/?text=Ставропольский%20край%2C%20село%20Александровское%2C%20улица%20Калинина%2C%2060"
               target="_blank" rel="noopener">с. Александровское, ул. Калинина, 60</a>
@@ -363,24 +316,11 @@
       </div>
     </div>
     <div class="footer__bottom">
-      <!--
-        Политика конфиденциальности: обязательна, потому что на сайте стоит
-        Яндекс.Метрика. Адрес полный — в статической сборке страницы нет,
-        она живёт только в WordPress; при сборке темы он подменяется
-        на get_privacy_policy_url(), чтобы ссылка не зависела от домена.
-      -->
       <span>
         &copy; 2026 Мебельный склад «Олимп» &middot;
         <a class="footer__link" href="<?php echo esc_url( get_privacy_policy_url() ); ?>">Политика конфиденциальности</a>
       </span>
       <span>Мебель, достойная Олимпа</span>
-      <!--
-        Подпись разработчика. Ссылки ведут в мессенджеры: ни у MAX, ни у
-        Telegram нет адресов по номеру телефона, поэтому здесь личные ссылки
-        профилей — номер они не раскрывают. Открываем в новой вкладке, чтобы
-        посетитель не терял страницу склада; noopener — чтобы открытая
-        страница не получила доступ к нашей через window.opener.
-      -->
       <span class="footer__author">
         Разработка сайта
         <a class="footer__contact" href="https://max.ru/u/f9LHodD0cOLQZPPSiiy8yTNRf5g_Uj6dO8Q7nFAXAbdgaJ1Exe6Uhw_a248"
@@ -396,7 +336,6 @@
   </div>
 </footer>
 
-<!-- Окно товара: крупное изображение и характеристики -->
 <div class="product-overlay" id="product-overlay" hidden></div>
 <div class="product" id="product" role="dialog" aria-modal="true" hidden>
   <button class="product__close" type="button" id="product-close" aria-label="Закрыть карточку товара">
@@ -405,7 +344,6 @@
   <div class="product__inner" id="product-inner"></div>
 </div>
 
-<!-- Панель корзины -->
 <div class="cart-overlay" id="cart-overlay" hidden></div>
 <aside class="cart" id="cart-drawer" role="dialog" aria-modal="true" aria-labelledby="cart-title" hidden>
   <div class="cart__head">
