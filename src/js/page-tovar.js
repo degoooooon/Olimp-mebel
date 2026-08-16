@@ -7,7 +7,7 @@
 // товар больше неоткуда.
 import { PRODUCTS, CATEGORIES } from './data.js';
 import { esc, fmt } from './utils.js';
-import { specsHTML } from './specs.js';
+import { specsHTML, sizeHTML } from './specs.js';
 import { galleryHTML, initGallery } from './gallery.js';
 import { idFromUrl } from './product-url.js';
 import { ORDER_PHONE, MAX_LINK } from './state.js';
@@ -53,6 +53,7 @@ if (!product) {
 
       <div class="tovar__info">
         <h1 class="tovar__name">${ name }</h1>
+        ${ sizeHTML(product) }
         ${ price }
         ${ stock }
 

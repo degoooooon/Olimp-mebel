@@ -5,7 +5,7 @@ import { PRODUCTS } from './data.js';
 import { cart } from './state.js';
 import { toggleInCart } from './cart.js';
 import { esc, fmt } from './utils.js';
-import { specsHTML } from './specs.js';
+import { specsHTML, sizeHTML } from './specs.js';
 import { galleryHTML, initGallery } from './gallery.js';
 import { idFromUrl, pushedByUs, pushProduct, dropProduct } from './product-url.js';
 import { SPRITE, grid, productModal, productOverlay, productInner, productClose } from './dom.js';
@@ -57,8 +57,11 @@ function render(p) {
     <div class="product__media">${ media }</div>
     <div class="product__body">
       <h2 class="product__name">${ name }</h2>
-      ${ price }
-      ${ add }
+      ${ sizeHTML(p) }
+      <div class="product__buy">
+        ${ price }
+        ${ add }
+      </div>
       ${ specs }
     </div>`;
 

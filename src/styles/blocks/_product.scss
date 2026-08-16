@@ -118,17 +118,32 @@
   color: var(--ink);
 }
 
+// Цена набрана витринным шрифтом, как и название. Раньше она была жирным
+// Manrope — обычный «магазинный» вид, из-за которого главным пятном на панели
+// оказывалась чёрная кнопка, а не то, ради чего человек сюда пришёл
 .product__price {
-  margin: 0 0 16px;
-  font-size: 22px;
-  font-weight: 700;
+  margin: 0;
+  font-family: var(--font-d);
+  font-size: 26px;
+  line-height: 1.1;
   color: var(--accent-dark);
 }
 
 .product__price--ask {
-  font-size: 18px;
-  font-weight: 400;
+  font-size: 19px;
   color: var(--muted);
+}
+
+// Цена и кнопка в одной строке. Кнопка во всю ширину перекрикивала панель:
+// почти чёрная полоса поперёк кремового фона тянула взгляд на себя раньше
+// названия и цены
+.product__buy {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px 20px;
+  margin-bottom: 24px;
 }
 
 // Полей у окна больше нет — иллюстрации-заглушке они всё же нужны:
@@ -156,9 +171,11 @@
   }
 }
 
-// Кнопка «В корзину» внутри окна товара: во всю ширину колонки, чтобы
-// в неё попадали пальцем на телефоне не целясь
-.product__add {
-  width: 100%;
-  margin-bottom: 20px;
+// На узком экране кнопка растягивается во всю ширину: там в неё попадают
+// пальцем не целясь, и места под цену рядом всё равно не остаётся
+@media (max-width: 520px) {
+  .product__add {
+    width: 100%;
+    justify-content: center;
+  }
 }
