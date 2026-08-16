@@ -96,3 +96,59 @@
     transition: none;
   }
 }
+
+// ─── Стрелки: только для телефона и планшета ───
+// На компьютере переключает наведение, и две кнопки поверх фотографии
+// закрывали бы товар. На тач-экране наведения нет, а невидимые полосы
+// без подсказки не найти — там стрелки единственный понятный способ.
+.gallery__arrow {
+  position: absolute;
+  top: 50%;
+  z-index: 2;
+  display: none;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  translate: 0 -50%;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.85);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.gallery__arrow--prev {
+  left: 8px;
+}
+
+.gallery__arrow--next {
+  right: 8px;
+}
+
+.gallery__chevron {
+  width: 16px;
+  height: 16px;
+  fill: var(--ink);
+}
+
+// Иконка в спрайте смотрит вниз — доворачиваем на четверть в нужную сторону.
+// Отдельные иконки «влево» и «вправо» ради этого в спрайт не добавляем
+.gallery__arrow--prev .gallery__chevron {
+  rotate: 90deg;
+}
+
+.gallery__arrow--next .gallery__chevron {
+  rotate: -90deg;
+}
+
+@media (hover: none) {
+  .gallery__arrow {
+    display: grid;
+  }
+
+  // Полосы наведения на тач-экране только мешают: нажатие по кадру
+  // должно открывать товар, а не листать снимки
+  .gallery__zone {
+    pointer-events: none;
+  }
+}

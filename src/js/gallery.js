@@ -46,7 +46,22 @@ export function galleryHTML(shots, alt, sizes) {
       <span class="gallery__bar"></span>
     </button>`).join('');
 
-  return `<div class="gallery">${ photos }<div class="gallery__zones" style="--zones:${ shots.length }">${ zones }</div></div>`;
+  // Стрелки — для телефона и планшета. Наведения там нет, а невидимые полосы
+  // без подсказки не найти: человек не знает, что по кадру можно нажимать.
+  // На компьютере стрелки спрятаны стилями — там работает наведение,
+  // и две кнопки поверх фотографии только загораживали бы товар.
+  const arrows = ['prev', 'next'].map((dir) =>
+    `<button class="gallery__arrow gallery__arrow--${ dir }" type="button" data-step="${ 'prev' === dir ? -1 : 1 }" aria-label="${ 'prev' === dir ? 'Предыдущий снимок' : 'Следующий снимок' }">
+      <svg class="gallery__chevron" aria-hidden="true"><use href="${ spriteHref() }#i-chevron"/></svg>
+    </button>`).join('');
+
+  return `<div class="gallery">${ photos }<div class="gallery__zones" style="--zones:${ shots.length }">${ zones }</div>${ arrows }</div>`;
+}
+
+// Адрес спрайта берём из уже стоящей на странице ссылки: в собранной версии
+// в имени файла хеш, и угадать его неоткуда
+function spriteHref() {
+  return document.querySelector('use[href*="spritemap"]')?.getAttribute('href').split('#')[0] ?? '';
 }
 
 function photo(s, name, sizes, i) {
@@ -79,6 +94,17 @@ export function initGallery(root) {
       // Проход табом тоже листает: человек с клавиатуры увидит все снимки,
       // ничего не нажимая
       zone.addEventListener('focus', () => show(i));
+    });
+
+    gallery.querySelectorAll('.gallery__arrow').forEach((arrow) => {
+      arrow.addEventListener('click', () => {
+        const now = zones.findIndex((z) => z.classList.contains(ON));
+        // По кругу: с последнего снимка «вперёд» ведёт на первый. Иначе
+        // на краю кнопка перестаёт отвечать, и это читается как поломка
+        const next = (now + Number(arrow.dataset.step) + photos.length) % photos.length;
+
+        show(next);
+      });
     });
 
     // Подписки на mouseleave нет намеренно: увели мышь — кадр остаётся тот,

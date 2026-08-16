@@ -2,6 +2,8 @@
 // Открывается кликом по карточке каталога — везде, кроме кнопки «В корзину»:
 // она остаётся быстрым действием и окно не открывает.
 import { PRODUCTS } from './data.js';
+import { cart } from './state.js';
+import { toggleInCart } from './cart.js';
 import { esc, fmt } from './utils.js';
 import { specsHTML } from './specs.js';
 import { galleryHTML, initGallery } from './gallery.js';
@@ -38,11 +40,25 @@ function render(p) {
     ? `<p class="product__price">${ fmt(p.price) }</p>`
     : '<p class="product__price product__price--ask">Цена по запросу</p>';
 
+  // Кнопка «В корзину» прямо здесь: иначе, чтобы положить товар, надо закрыть
+  // окно и найти ту же карточку в сетке. Человек, открывший карточку и решивший
+  // брать, уходит из неё — и половина на этом теряется.
+  //
+  // data-add тот же, что у карточки в каталоге: cart.js приводит в порядок
+  // все кнопки одного товара разом, поэтому обе всегда показывают одно
+  const inCart = cart.has(p.id);
+  const add = p.stock
+    ? `<button class="add product__add${ inCart ? ' add--in' : '' }" type="button" data-add="${ p.id }">
+        <svg class="icon add__icon" aria-hidden="true"><use href="${ SPRITE }#i-${ inCart ? 'check' : 'bag' }"/></svg>${ inCart ? 'В корзине' : 'В корзину' }
+      </button>`
+    : '<button class="add product__add" type="button" disabled>Нет в наличии</button>';
+
   productInner.innerHTML = `
     <div class="product__media">${ media }</div>
     <div class="product__body">
       <h2 class="product__name">${ name }</h2>
       ${ price }
+      ${ add }
       ${ specs }
     </div>`;
 
@@ -160,6 +176,16 @@ export function initProduct() {
     e.preventDefault();
     pushProduct(p.id);
     open(p);
+  });
+
+  // Кнопка «В корзину» внутри окна. Обработчик каталога слушает только сетку,
+  // до окна он не достаёт — поэтому своя подписка, но действие то же самое
+  productInner.addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-add]');
+
+    if (btn && !btn.disabled) {
+      toggleInCart(+btn.dataset.add);
+    }
   });
 
   productClose.addEventListener('click', closeByUser);
