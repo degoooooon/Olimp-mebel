@@ -96,16 +96,41 @@ export function initGallery(root) {
       zone.addEventListener('focus', () => show(i));
     });
 
-    gallery.querySelectorAll('.gallery__arrow').forEach((arrow) => {
-      arrow.addEventListener('click', () => {
-        const now = zones.findIndex((z) => z.classList.contains(ON));
-        // По кругу: с последнего снимка «вперёд» ведёт на первый. Иначе
-        // на краю кнопка перестаёт отвечать, и это читается как поломка
-        const next = (now + Number(arrow.dataset.step) + photos.length) % photos.length;
+    // По кругу: с последнего снимка «вперёд» ведёт на первый. Иначе на краю
+    // кнопка перестаёт отвечать, и это читается как поломка
+    const step = (by) => {
+      const now = zones.findIndex((z) => z.classList.contains(ON));
 
-        show(next);
-      });
+      show((now + by + photos.length) % photos.length);
+    };
+
+    gallery.querySelectorAll('.gallery__arrow').forEach((arrow) => {
+      arrow.addEventListener('click', () => step(Number(arrow.dataset.step)));
     });
+
+    // Смахивание пальцем. Стрелки на телефоне остаются: свайп находят не все,
+    // а видимая кнопка говорит, что снимков несколько.
+    //
+    // preventDefault намеренно не зовём: страница под галереей должна
+    // прокручиваться вертикально как обычно. Поэтому и сравниваем сдвиги —
+    // горизонтальный больше вертикального означает смахивание, а не прокрутку.
+    let x0 = 0;
+    let y0 = 0;
+
+    gallery.addEventListener('touchstart', (e) => {
+      x0 = e.changedTouches[0].clientX;
+      y0 = e.changedTouches[0].clientY;
+    }, { passive: true });
+
+    gallery.addEventListener('touchend', (e) => {
+      const dx = e.changedTouches[0].clientX - x0;
+      const dy = e.changedTouches[0].clientY - y0;
+
+      // 40px — порог, ниже которого это дрожание руки при нажатии, а не жест
+      if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy)) {
+        step(dx < 0 ? 1 : -1);
+      }
+    }, { passive: true });
 
     // Подписки на mouseleave нет намеренно: увели мышь — кадр остаётся тот,
     // что смотрели. Возврат к первому сбрасывал бы выбор ровно в тот момент,
