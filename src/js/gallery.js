@@ -1,20 +1,22 @@
 // ─── Галерея снимков товара ───
 //
-// Снимки лежат стопкой, показан один. Поверх — невидимые зоны: сколько
-// снимков, столько вертикальных полос во всю высоту. Мышь идёт по кадру
-// и переключает снимки, ничего не нажимая. Так сделано у Авито, и это
-// удобнее стрелок: не надо целиться в мелкий кружок.
+// Снимки лежат стопкой, показан один. Поверх — полосы во всю высоту кадра:
+// сколько снимков, столько полос. Мышь идёт по кадру и переключает снимки,
+// ничего не нажимая. Так сделано у Авито и Paratype, и это удобнее стрелок:
+// не надо целиться в мелкий кружок.
 //
-// Наведения на телефоне не существует, поэтому под кадром точки. Они
-// не украшение: во-первых, показывают, что снимков несколько, во-вторых,
-// по ним можно ткнуть пальцем и пройти с клавиатуры. Без них галерея была бы
-// доступна только человеку с мышью.
+// Указатель — не точки, а линия сверху, разрезанная на столько же кусков.
+// Кусок активного снимка светлый, остальные притушены: сразу видно и сколько
+// всего снимков, и какой открыт. Точки давали то же самое, но занимали угол
+// кадра и на светлой фотографии терялись.
 //
-// Вертикальную простыню из трёх снимков заменяет именно это: страница
-// перестаёт растягиваться на три экрана, а посмотреть можно всё.
+// Полосы — настоящие кнопки, а не пустые блоки. Наведения на телефоне
+// не существует, и без этого галерея работала бы только у человека с мышью:
+// нажатие пальцем по левой, средней или правой трети переключает снимок.
 import { esc } from './utils.js';
 
 const ACTIVE = 'gallery__photo--active';
+const ON = 'gallery__zone--on';
 
 /**
  * Разметка галереи.
@@ -31,33 +33,27 @@ export function galleryHTML(shots, alt, sizes) {
 
   const name = esc(alt);
 
-  // Один снимок — галерея не нужна: ни зон, ни точек, просто картинка.
-  // Иначе получилась бы одна точка под кадром, которая ничего не делает
+  // Один снимок — галерея не нужна: ни полос, ни указателя. Иначе под кадром
+  // висела бы одна линия во всю ширину, которая ничего не переключает
   if (1 === shots.length) {
     return photo(shots[0], name, sizes, 0);
   }
 
   const photos = shots.map((s, i) => photo(s, name, sizes, i)).join('');
 
-  // aria-hidden у зон намеренно: для скринридера это пустые блоки без смысла,
-  // а переключение ему доступно через точки — они настоящие кнопки
-  const zones = `<div class="gallery__zones" aria-hidden="true" style="--zones:${ shots.length }">${
-    shots.map(() => '<span class="gallery__zone"></span>').join('')
-  }</div>`;
+  const zones = shots.map((s, i) =>
+    `<button class="gallery__zone${ i ? '' : ` ${ ON }` }" type="button" aria-label="Снимок ${ i + 1 } из ${ shots.length }">
+      <span class="gallery__bar"></span>
+    </button>`).join('');
 
-  const dots = `<div class="gallery__dots">${
-    shots.map((s, i) => `<button class="gallery__dot${ i ? '' : ' gallery__dot--on' }" type="button" data-shot="${ i }" aria-label="Снимок ${ i + 1 } из ${ shots.length }"></button>`).join('')
-  }</div>`;
-
-  return `<div class="gallery">${ photos }${ zones }${ dots }</div>`;
+  return `<div class="gallery">${ photos }<div class="gallery__zones" style="--zones:${ shots.length }">${ zones }</div></div>`;
 }
 
 function photo(s, name, sizes, i) {
   const srcset = s.srcset ? ` srcset="${ esc(s.srcset) }" sizes="${ esc(sizes) }"` : '';
 
   // Первый снимок грузится сразу, остальные лениво: пока по ним не провели
-  // мышью, они не нужны, а на карточке с тремя кадрами это втрое меньше
-  // трафика при открытии
+  // мышью, они не нужны, а это втрое меньше трафика при открытии карточки
   return `<img class="gallery__photo${ i ? '' : ` ${ ACTIVE }` }" src="${ esc(s.photo) }"${ srcset } alt="${ name }${ i ? ` — снимок ${ i + 1 }` : '' }"${ i ? ' loading="lazy"' : '' }>`;
 }
 
@@ -70,26 +66,23 @@ function photo(s, name, sizes, i) {
 export function initGallery(root) {
   for (const gallery of root.querySelectorAll('.gallery')) {
     const photos = [...gallery.querySelectorAll('.gallery__photo')];
-    const dots = [...gallery.querySelectorAll('.gallery__dot')];
+    const zones = [...gallery.querySelectorAll('.gallery__zone')];
 
     const show = (i) => {
       photos.forEach((el, n) => el.classList.toggle(ACTIVE, n === i));
-      dots.forEach((el, n) => el.classList.toggle('gallery__dot--on', n === i));
+      zones.forEach((el, n) => el.classList.toggle(ON, n === i));
     };
 
-    gallery.querySelectorAll('.gallery__zone').forEach((zone, i) => {
+    zones.forEach((zone, i) => {
       zone.addEventListener('mouseenter', () => show(i));
+      zone.addEventListener('click', () => show(i));
+      // Проход табом тоже листает: человек с клавиатуры увидит все снимки,
+      // ничего не нажимая
+      zone.addEventListener('focus', () => show(i));
     });
 
-    dots.forEach((dot, i) => {
-      dot.addEventListener('click', () => show(i));
-      // Tab по точкам тоже переключает: человек с клавиатуры увидит снимки,
-      // не нажимая ничего
-      dot.addEventListener('focus', () => show(i));
-    });
-
-    // Увели мышь — возвращаем первый снимок. Иначе карточка остаётся
-    // с третьим кадром, и в сетке товары выглядят вразнобой
+    // Увели мышь — возвращаем первый снимок. Иначе кадр остаётся на третьем,
+    // и в сетке товары выглядят вразнобой
     gallery.addEventListener('mouseleave', () => show(0));
   }
 }
