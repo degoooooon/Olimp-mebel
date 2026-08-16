@@ -27,8 +27,11 @@ if (!product) {
   const name = esc(product.name);
   const cat = CATEGORIES.find((c) => c.id === product.cat);
 
-  const media = product.photo
-    ? `<img class="tovar__photo" src="${ esc(product.photo) }" alt="${ name }"${ product.srcset ? ` srcset="${ esc(product.srcset) }" sizes="(min-width: 900px) 520px, 92vw"` : '' }>`
+  // Все снимки товара, а не только первый: ради них страница и заводилась
+  const gallery = product.photos ?? (product.photo ? [{ photo: product.photo, srcset: product.srcset }] : []);
+
+  const media = gallery.length
+    ? gallery.map((g, i) => `<img class="tovar__photo" src="${ esc(g.photo) }"${ g.srcset ? ` srcset="${ esc(g.srcset) }" sizes="(min-width: 900px) 520px, 92vw"` : '' } alt="${ name }${ i ? ` — снимок ${ i + 1 }` : '' }"${ i ? ' loading="lazy"' : '' }>`).join('')
     : `<svg class="tovar__illustration" viewBox="0 0 200 150" role="img" aria-label="${ name }"><use href="${ document.querySelector('use[href*="spritemap"]')?.getAttribute('href').split('#')[0] ?? '' }#i-${ esc(product.img) }"/></svg>`;
 
   const price = Number.isFinite(product.price)

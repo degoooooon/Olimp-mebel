@@ -56,8 +56,10 @@
   }
 }
 
+// Галерея столбцом: человек листает страницу, а не ищет стрелки
 .tovar__media {
   display: grid;
+  gap: 12px;
   place-items: center;
   padding: 24px;
   background: var(--paper);
@@ -122,3 +124,5 @@
 .tovar__link {
   color: var(--accent-dark);
 }
+
+// Галерея столбцом. Первый снимок крупный, остальные под ним — человек
