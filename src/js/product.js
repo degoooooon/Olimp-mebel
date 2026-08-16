@@ -3,6 +3,7 @@
 // она остаётся быстрым действием и окно не открывает.
 import { PRODUCTS } from './data.js';
 import { esc, fmt } from './utils.js';
+import { specsHTML } from './specs.js';
 import { idFromUrl, pushedByUs, pushProduct, dropProduct } from './product-url.js';
 import { SPRITE, grid, productModal, productOverlay, productInner, productClose } from './dom.js';
 
@@ -10,23 +11,6 @@ let lastFocused = null;
 let hideTimer = null; // отложенное hidden, пока идёт анимация закрытия
 
 const FOCUSABLE = 'a[href], button:not(:disabled), input, select, textarea, [tabindex]:not([tabindex="-1"])';
-
-// Характеристики приходят из админки парами «название — значение». Их может
-// не быть вовсе: у части товаров описание ещё не заполнили, и тогда окно
-// остаётся тем же просмотром фотографии, каким было раньше.
-function specsHTML(p) {
-  if (!p.specs) {
-    return '';
-  }
-
-  const rows = p.specs.map((s) =>
-    `<div class="specs__row">
-      <dt class="specs__name">${ esc(s.name) }</dt>
-      <dd class="specs__value">${ esc(s.value) }</dd>
-    </div>`).join('');
-
-  return `<dl class="specs">${ rows }</dl>`;
-}
 
 function render(p) {
   const name = esc(p.name);

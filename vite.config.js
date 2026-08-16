@@ -121,7 +121,15 @@ export default defineConfig(({ mode }) => {
             path.resolve(__dirname, 'src/styles/style.scss'),
           ],
         }
-        : {},
+        // Две страницы: каталог и макет страницы товара. Второй вход нужен
+        // только статике — в теме страницу товара будет печатать PHP,
+        // и лишний бандл там просто лежал бы мёртвым грузом.
+        : {
+          input: {
+            main: path.resolve(__dirname, 'src/index.html'),
+            tovar: path.resolve(__dirname, 'src/tovar.html'),
+          },
+        },
     },
 
     server: {

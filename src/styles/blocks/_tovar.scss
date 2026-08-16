@@ -1,0 +1,124 @@
+// ─── Страница товара ───
+// Макет отдельной страницы. Разметку отсюда заберёт шаблон WordPress,
+// поэтому классы названы по смыслу страницы, а не по её месту в статике.
+
+.topbar {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--line);
+  background: var(--surface);
+}
+
+.topbar__back {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--muted);
+  font-size: 15px;
+}
+
+// Стрелка в спрайте смотрит вправо — разворачиваем, отдельной иконки
+// ради одного разворота в спрайт не добавляем
+.topbar__arrow {
+  width: 18px;
+  height: 18px;
+  rotate: 180deg;
+  fill: currentColor;
+}
+
+.tovar {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 24px 20px 64px;
+}
+
+.crumbs {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 20px;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.crumbs__link {
+  color: var(--accent-dark);
+}
+
+.tovar__grid {
+  display: grid;
+  gap: 32px;
+}
+
+@media (min-width: 900px) {
+  .tovar__grid {
+    grid-template-columns: 520px minmax(0, 1fr);
+    align-items: start;
+  }
+}
+
+.tovar__media {
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: var(--paper);
+  border-radius: var(--radius);
+}
+
+.tovar__photo {
+  width: 100%;
+  height: auto;
+  border-radius: calc(var(--radius) - 8px);
+}
+
+.tovar__illustration {
+  width: 100%;
+  max-width: 360px;
+  height: auto;
+}
+
+.tovar__name {
+  margin: 0 0 12px;
+  font-family: var(--font-d);
+  font-size: 32px;
+  line-height: 1.15;
+  color: var(--ink);
+}
+
+.tovar__price {
+  margin: 0 0 4px;
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--accent-dark);
+}
+
+.tovar__price--ask {
+  font-size: 20px;
+  font-weight: 400;
+  color: var(--muted);
+}
+
+.tovar__stock {
+  margin: 0 0 20px;
+  color: var(--olive);
+  font-size: 15px;
+}
+
+.tovar__stock--out {
+  color: var(--muted);
+}
+
+.tovar__order {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 28px;
+}
+
+.tovar__nospecs,
+.tovar__missing {
+  color: var(--muted);
+}
+
+.tovar__link {
+  color: var(--accent-dark);
+}

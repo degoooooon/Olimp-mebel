@@ -62,6 +62,9 @@
 @use "blocks/product-overlay";
 @use "blocks/product";
 @use "blocks/specs";
+// Отдельная страница товара. Подключается после product: там те же
+// характеристики, и правки страницы не должны перебивать окно
+@use "blocks/tovar";
 
 // Корзина
 @use "blocks/cart-overlay";

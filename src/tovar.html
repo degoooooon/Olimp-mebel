@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Товар — Мебельный склад «Олимп»</title>
+<meta name="description" content="Карточка товара мебельного склада «Олимп»: фотографии, характеристики, цена и наличие.">
+
+<link rel="icon" href="./favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="./apple-touch-icon.png">
+<meta name="theme-color" content="#B14E2B">
+
+<!--
+  Макет страницы товара. Пока это отдельная статическая страница: настоящие
+  адреса вида /tovar/divan-zevs/ выдаёт WordPress, а тема ещё не тронута.
+  Разметка отсюда станет исходником для single-olimp_product.php — так же,
+  как index.html уже стал исходником для front-page.php.
+
+  Заголовок и описание здесь заглушки: на живом сайте их подставит WordPress
+  из названия товара. В статике подставить неоткуда — товар известен только
+  после того, как отработает скрипт.
+-->
+<meta name="robots" content="noindex">
+
+<link rel="stylesheet" href="./styles/style.scss">
+</head>
+<body>
+
+<header class="topbar">
+  <a class="topbar__back" href="./">
+    <svg class="topbar__arrow" aria-hidden="true"><use href="/__spritemap#i-arrow"/></svg>
+    В каталог
+  </a>
+</header>
+
+<main class="tovar" id="tovar">
+  <!--
+    Пусто до отработки скрипта: товар выбирается по адресу вида ?tovar=101.
+    На живом сайте это место заполнит PHP, и страница будет читаться
+    без единой строчки скрипта.
+  -->
+</main>
+
+<script type="module" src="./js/page-tovar.js"></script>
+</body>
+</html>
