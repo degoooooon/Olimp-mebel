@@ -27,6 +27,15 @@ const OLIMP_GOOGLE_VERIFICATION = '';
 // Номер счётчика Яндекс.Метрики. Пустой — счётчик не печатается.
 const OLIMP_METRIKA_ID = '111394740';
 
+// Каналы приёма заказов на странице товара. Формат телефона 7XXXXXXXXXX,
+// без «+» и пробелов.
+//
+// Те же значения лежат в src/js/state.js — оттуда их берут корзина
+// и подвал. Меняешь здесь — поменяй и там: разойдутся, и покупатель
+// со страницы товара позвонит по одному номеру, а из корзины по другому.
+const OLIMP_ORDER_PHONE = '79620018222';
+const OLIMP_MAX_LINK    = 'https://max.ru/u/f9LHodD0cOLisUpMJE-ED8v12sofyDFMOM_cwKS210Zd_F0vBkqmk9mA9mU';
+
 /* -------------------------------------------------------------------------
  *  Адреса собранных файлов
  * ---------------------------------------------------------------------- */
@@ -268,20 +277,33 @@ function olimp_register_content() {
 				'search_items'  => 'Найти товар',
 				'not_found'     => 'Товаров пока нет',
 			),
-			// Отдельных страниц у товаров нет: сайт одностраничный, описания
-			// у товара тоже нет. При public => true WordPress заводил адреса
-			// вида /tovar/…, они перебрасывали на главную, и поисковик получал
-			// пустые перенаправления. Показываем товары только в админке.
-			'public'             => false,
-			'publicly_queryable' => false,
+			// У каждого товара свой адрес: /tovar/divan-barselona/.
+			//
+			// Раньше тип записи был закрыт. Причина звучала разумно —
+			// «сайт одностраничный, шаблона нет, адреса ведут на главную», —
+			// но это было не решение, а обход недоделки: возможность выключили,
+			// чтобы не писать шаблон. Стоило это дорого: сорок один товар
+			// и ни одного адреса, который можно отправить покупателю
+			// или показать поисковику.
+			'public'             => true,
+			'publicly_queryable' => true,
+			'exclude_from_search' => false,
 			'show_ui'            => true,
 			'show_in_menu'       => true,
 			'menu_icon'          => 'dashicons-store',
 			'menu_position'      => 5,
 			// page-attributes даёт поле «Порядок» и перетаскивание в списке
 			'supports'           => array( 'title', 'thumbnail', 'page-attributes' ),
+			// Списка всех товаров по своему адресу нет: его роль играет
+			// каталог на главной, с фильтрами и поиском. Вторая такая же
+			// страница делила бы с ней поисковый вес.
 			'has_archive'        => false,
-			'rewrite'            => false,
+			// Слаг в единственном числе и без «product»: адрес читает человек,
+			// которому его прислали в мессенджере
+			'rewrite'            => array(
+				'slug'       => 'tovar',
+				'with_front' => false,
+			),
 			'show_in_rest'       => true,
 		)
 	);
@@ -663,6 +685,10 @@ function olimp_products() {
 
 		$item = array(
 			'id'    => $post->ID,
+			// Адрес страницы товара. Отдаём готовым, а не собираем в скрипте:
+			// слаг может быть каким угодно, а постоянные ссылки настраиваются
+			// в админке — угадать адрес на стороне браузера неоткуда
+			'url'   => get_permalink( $post ),
 			'name'  => $post->post_title,
 			'cat'   => $slug,
 			'old'   => ( '' === $old ) ? null : (int) $old,
@@ -873,4 +899,229 @@ function olimp_catalog_json() {
 	echo '<script type="application/json" id="catalog-data">'
 		. wp_json_encode( $data, JSON_HEX_TAG | JSON_HEX_AMP | JSON_UNESCAPED_UNICODE )
 		. '</script>' . "\n";
+}
+
+/* -------------------------------------------------------------------------
+ *  Страница товара
+ * ---------------------------------------------------------------------- */
+
+/**
+ * Печатает содержимое страницы товара.
+ *
+ * Разметку сюда вставляет single-olimp_product.php, который собирается
+ * из src/tovar.html. Классы те же, что у макета, — стили одни на оба случая.
+ *
+ * Печатаем на сервере, а не скриптом: страница товара существует ради того,
+ * чтобы её нашли в поиске и открыли по ссылке из мессенджера. Разметка,
+ * появляющаяся после JS, ни того, ни другого не даёт.
+ *
+ * @return void
+ */
+function olimp_product_page() {
+	$id    = get_the_ID();
+	$name  = get_the_title();
+	$specs = olimp_parse_specs( get_post_meta( $id, 'olimp_specs', true ) );
+	$price = get_post_meta( $id, 'olimp_price', true );
+	$stock = get_post_meta( $id, 'olimp_in_stock', true );
+	$terms = get_the_terms( $id, 'olimp_category' );
+	$cat   = ( is_array( $terms ) && $terms ) ? $terms[0] : null;
+
+	echo '<nav class="crumbs" aria-label="Хлебные крошки"><a class="crumbs__link" href="'
+		. esc_url( home_url( '/' ) ) . '">Каталог</a>';
+
+	if ( $cat ) {
+		echo '<span class="crumbs__sep" aria-hidden="true">›</span><span class="crumbs__current">'
+			. esc_html( $cat->name ) . '</span>';
+	}
+
+	echo '</nav><div class="tovar__grid"><div class="tovar__media">';
+	olimp_product_gallery( $id, $name );
+	echo '</div><div class="tovar__info"><h1 class="tovar__name">' . esc_html( $name ) . '</h1>';
+
+	olimp_product_size( $specs );
+
+	echo '' === $price
+		? '<p class="tovar__price tovar__price--ask">Цена по запросу</p>'
+		: '<p class="tovar__price">' . esc_html( olimp_price( (int) $price ) ) . '</p>';
+
+	// Товар, у которого галочку ни разу не трогали, считаем в наличии —
+	// так же, как в каталоге
+	echo ( '' === $stock || '1' === $stock )
+		? '<p class="tovar__stock">Есть в наличии</p>'
+		: '<p class="tovar__stock tovar__stock--out">Нет в наличии</p>';
+
+	printf(
+		'<div class="tovar__order"><a class="btn btn--primary" href="tel:+%1$s">Позвонить</a>'
+			. '<a class="btn" href="%2$s" target="_blank" rel="noopener">Написать в MAX</a></div>',
+		esc_attr( OLIMP_ORDER_PHONE ),
+		esc_url( OLIMP_MAX_LINK )
+	);
+
+	olimp_product_specs( $specs );
+
+	echo '</div></div>';
+}
+
+/**
+ * Галерея снимков товара.
+ *
+ * Первый снимок — изображение записи, остальные берём из прикреплённых
+ * к записи файлов: их владелец загружает через ту же кнопку «Добавить медиа»,
+ * отдельного поля под каждый снимок заводить не надо.
+ *
+ * Разметка совпадает с той, что печатает src/js/gallery.js: переключение
+ * снимков включает тот же скрипт, он ищет .gallery на любой странице.
+ *
+ * @param int    $id   Номер записи.
+ * @param string $name Название товара для подписи.
+ * @return void
+ */
+function olimp_product_gallery( $id, $name ) {
+	$ids = array();
+	$thumb = get_post_thumbnail_id( $id );
+
+	if ( $thumb ) {
+		$ids[] = (int) $thumb;
+	}
+
+	foreach ( get_attached_media( 'image', $id ) as $file ) {
+		if ( ! in_array( (int) $file->ID, $ids, true ) ) {
+			$ids[] = (int) $file->ID;
+		}
+	}
+
+	if ( ! $ids ) {
+		printf(
+			'<svg class="tovar__illustration" viewBox="0 0 200 150" role="img" aria-label="%1$s"><use href="%2$s#i-box"/></svg>',
+			esc_attr( $name ),
+			esc_url( olimp_sprite() )
+		);
+		return;
+	}
+
+	$sizes = '(min-width: 900px) 520px, 92vw';
+
+	if ( 1 === count( $ids ) ) {
+		echo wp_get_attachment_image( $ids[0], 'olimp-card-3x', false, array(
+			'class' => 'gallery__photo gallery__photo--active',
+			'alt'   => $name,
+			'sizes' => $sizes,
+		) );
+		return;
+	}
+
+	echo '<div class="gallery">';
+
+	foreach ( $ids as $i => $shot ) {
+		echo wp_get_attachment_image( $shot, 'olimp-card-3x', false, array(
+			'class'   => 'gallery__photo' . ( $i ? '' : ' gallery__photo--active' ),
+			'alt'     => 0 === $i ? $name : $name . ' — снимок ' . ( $i + 1 ),
+			'sizes'   => $sizes,
+			'loading' => $i ? 'lazy' : 'eager',
+		) );
+	}
+
+	printf( '<div class="gallery__zones" style="--zones:%d">', count( $ids ) );
+
+	foreach ( $ids as $i => $shot ) {
+		printf(
+			'<button class="gallery__zone%1$s" type="button" aria-label="Снимок %2$d из %3$d"><span class="gallery__bar"></span></button>',
+			$i ? '' : ' gallery__zone--on',
+			$i + 1,
+			count( $ids )
+		);
+	}
+
+	echo '</div>';
+
+	foreach ( array( 'prev' => -1, 'next' => 1 ) as $dir => $stepe ) {
+		printf(
+			'<button class="gallery__arrow gallery__arrow--%1$s" type="button" data-step="%2$d" aria-label="%3$s"><svg class="gallery__chevron" aria-hidden="true"><use href="%4$s#i-chevron"/></svg></button>',
+			esc_attr( $dir ),
+			$stepe,
+			'prev' === $dir ? 'Предыдущий снимок' : 'Следующий снимок',
+			esc_url( olimp_sprite() )
+		);
+	}
+
+	echo '</div>';
+}
+
+/**
+ * Габариты одной строкой: «220 × 97 × 83 см».
+ *
+ * Первое, что спрашивает покупатель мебели, — поместится ли она. Ничего
+ * не печатаем, если нашлись не все три: два размера из трёх не отвечают
+ * ни на что, а выдумывать третий нельзя.
+ *
+ * @param array<int, array<string, string>> $specs Характеристики товара.
+ * @return void
+ */
+function olimp_product_size( $specs ) {
+	$want  = array( 'Ширина, см', 'Глубина, см', 'Высота, см' );
+	$found = array();
+
+	foreach ( $want as $name ) {
+		foreach ( $specs as $s ) {
+			if ( $name === $s['name'] ) {
+				$found[] = $s['value'];
+				break;
+			}
+		}
+	}
+
+	if ( count( $found ) !== count( $want ) ) {
+		return;
+	}
+
+	$parts = array();
+
+	foreach ( $found as $v ) {
+		$parts[] = esc_html( $v );
+	}
+
+	echo '<p class="size">' . implode( ' <span class="size__x">×</span> ', $parts )
+		. '<span class="size__unit">см</span></p>';
+}
+
+/**
+ * Таблица характеристик. Габариты из неё убраны — они напечатаны строкой выше,
+ * и те же три числа не должны стоять на экране дважды.
+ *
+ * @param array<int, array<string, string>> $specs Характеристики товара.
+ * @return void
+ */
+function olimp_product_specs( $specs ) {
+	$dims = array( 'Ширина, см', 'Глубина, см', 'Высота, см' );
+	$have = 0;
+
+	foreach ( $specs as $s ) {
+		if ( in_array( $s['name'], $dims, true ) ) {
+			++$have;
+		}
+	}
+
+	$rows = array();
+
+	foreach ( $specs as $s ) {
+		if ( count( $dims ) === $have && in_array( $s['name'], $dims, true ) ) {
+			continue;
+		}
+
+		$rows[] = $s;
+	}
+
+	if ( ! $rows ) {
+		echo '<p class="tovar__nospecs">Характеристики пока не заполнены.</p>';
+		return;
+	}
+
+	echo '<dl class="specs">';
+
+	foreach ( $rows as $s ) {
+		echo '<div class="specs__row"><dt class="specs__name">' . esc_html( $s['name'] )
+			. '</dt><dd class="specs__value">' . esc_html( $s['value'] ) . '</dd></div>';
+	}
+
+	echo '</dl>';
 }

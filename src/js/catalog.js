@@ -116,7 +116,7 @@ function cardHTML(p, i) {
   return `
   <article class="card" data-id="${p.id}" style="animation-delay:${Math.min(i * 45, 360)}ms">
     <a class="card__media${p.photo ? ' card__media--photo' : ''}"
-      href="${productUrl(p.id)}" data-more="${p.id}" aria-label="Подробнее: ${name}">
+      href="${productUrl(p)}" aria-label="Подробнее: ${name}">
       <span class="card__badges">${badge(p)}</span>
       ${media}
     </a>

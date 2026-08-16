@@ -39,10 +39,6 @@ export const catsBar = document.getElementById('cats-bar');
 export const catsThumb = document.getElementById('cats-thumb');
 
 // Окно товара
-export const productModal = document.getElementById('product');
-export const productOverlay = document.getElementById('product-overlay');
-export const productInner = document.getElementById('product-inner');
-export const productClose = document.getElementById('product-close');
 
 // Корзина: счётчик в шапке и выезжающая панель
 export const cartCount = document.getElementById('cart-count');

@@ -10,7 +10,6 @@
 //    sort.js    — свой список сортировки
 //    catalog.js — фильтры, карточки, сетка
 //    cart.js    — выезжающая корзина и заказ
-//    product.js — окно товара с крупным изображением
 //    reveal.js  — появление блоков при прокрутке
 // ─────────────────────────────────────────────
 import { initNav } from './nav.js';
@@ -18,7 +17,6 @@ import { initCats } from './cats.js';
 import { initSort } from './sort.js';
 import { initCatalog } from './catalog.js';
 import { initCart } from './cart.js';
-import { initProduct } from './product.js';
 import { initReveal } from './reveal.js';
 
 initNav();
@@ -26,7 +24,6 @@ initCats();
 initSort();
 initCatalog();
 initCart();
-initProduct();
 // Последним: к этому моменту плитки категорий уже нарисованы и попадут под наблюдение
 initReveal();
 

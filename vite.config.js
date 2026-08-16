@@ -38,10 +38,19 @@ export default defineConfig(({ mode }) => {
       // Минификация HTML — только для статической сборки, в теме HTML нет
       ...(isTheme ? [] : [createHtmlPlugin({ minify: true })]),
 
-      // Шаблон главной страницы темы собирается из того же index.html
+      // Шаблоны темы собираются из тех же исходников, что и статика:
+      // главная из index.html, страница товара из tovar.html
       ...(isTheme ? [wpTemplate({
-        src: path.resolve(__dirname, 'src/index.html'),
-        out: path.resolve(__dirname, `wp-theme/${ THEME_DIR }/front-page.php`),
+        pages: [
+          {
+            src: path.resolve(__dirname, 'src/index.html'),
+            out: path.resolve(__dirname, `wp-theme/${ THEME_DIR }/front-page.php`),
+          },
+          {
+            src: path.resolve(__dirname, 'src/tovar.html'),
+            out: path.resolve(__dirname, `wp-theme/${ THEME_DIR }/single-olimp_product.php`),
+          },
+        ],
       })] : []),
 
       // Спрайт иконок. Каждая иконка — отдельный файл в img/sprite, плагин

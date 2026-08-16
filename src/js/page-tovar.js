@@ -9,12 +9,15 @@ import { PRODUCTS, CATEGORIES } from './data.js';
 import { esc, fmt } from './utils.js';
 import { specsHTML, sizeHTML } from './specs.js';
 import { galleryHTML, initGallery } from './gallery.js';
-import { idFromUrl } from './product-url.js';
 import { ORDER_PHONE, MAX_LINK } from './state.js';
 
 const root = document.getElementById('tovar');
 
-const product = PRODUCTS.find((p) => String(p.id) === String(idFromUrl())) ?? null;
+// Номер товара в адресе макета: tovar.html?tovar=101. На живом сайте эту
+// разметку печатает PHP, и скрипт здесь не участвует вовсе.
+const asked = new URLSearchParams(location.search).get('tovar');
+
+const product = PRODUCTS.find((p) => String(p.id) === String(asked)) ?? null;
 
 // Товара нет: адрес набрали руками, товар сняли с продажи или каталог
 // перезалили с новыми номерами. Пустая страница тут хуже всего — человек

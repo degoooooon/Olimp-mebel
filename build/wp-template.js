@@ -16,7 +16,9 @@ const DROP = [
   /^\s*<script type="module" src="\.\/js\/main\.js"><\/script>\s*$/m,
 ];
 
-function toPhp(html) {
+// Правки, общие для всех страниц темы: подключение файлов, адрес спрайта,
+// точки вставки WordPress. Отличается только содержимое между ними.
+function common(html) {
   let out = html;
   for (const re of DROP) {
     out = out.replace(re, '');
@@ -57,6 +59,14 @@ function toPhp(html) {
       'href="https://olimp-mebel26.ru/privacy-policy/"',
       'href="<?php echo esc_url( get_privacy_policy_url() ); ?>"'
     )
+    // Точки, куда WordPress и плагины вставляют своё
+    .replace('</head>', '<?php wp_head(); ?>\n</head>')
+    .replace('<body>', '<body <?php body_class(); ?>>');
+}
+
+// ─── Главная: каталог ───
+function frontPage(html) {
+  return common(html)
     // Каталог отдаём сразу разметкой, а не только скриптом: до того, как
     // отработает JS, страница уже содержит названия товаров и категорий.
     // Скрипт при загрузке перерисует эти же блоки и дальше ведёт их сам.
@@ -71,23 +81,53 @@ function toPhp(html) {
       '<span class="toolbar__count" id="count" role="status"><?php olimp_count(); ?></span>'
     )
 
-    // Точки, куда WordPress и плагины вставляют своё
-    .replace('</head>', '<?php wp_head(); ?>\n</head>')
-    .replace('<body>', '<body <?php body_class(); ?>>')
     // Товары и категории — тем самым блоком JSON, который ищет data.js
     .replace('</body>', '<?php olimp_catalog_json(); ?>\n<?php wp_footer(); ?>\n</body>');
 }
 
-export function wpTemplate({ src, out }) {
+// ─── Страница товара ───
+function singleProduct(html) {
+  return common(html)
+    // Заголовок и описание печатает WordPress из названия товара: в исходнике
+    // они заглушки, потому что статическая сборка товара не знает
+    .replace(/<title>[^<]*<\/title>\n/, '')
+    .replace(/<meta name="description"[^>]*>\n/, '')
+    // Макет закрыт от индексации, настоящая страница — нет. Ради этого
+    // всё и делалось: сорок один адрес вместо одного
+    .replace(/<meta name="robots" content="noindex">\n/, '')
+    // Содержимое печатает PHP. Скрипт на этой странице не нужен вовсе:
+    // разметка приходит готовой, и поисковику, и человеку без JS
+    .replace(
+      /<main class="tovar" id="tovar">[\s\S]*?<\/main>/,
+      '<main class="tovar" id="tovar"><?php olimp_product_page(); ?></main>'
+    )
+    .replace(/^\s*<script type="module" src="\.\/js\/page-tovar\.js"><\/script>\s*$/m, '')
+    .replace('</body>', '<?php wp_footer(); ?>\n</body>');
+}
+
+const BUILDERS = {
+  'front-page.php': frontPage,
+  'single-olimp_product.php': singleProduct,
+};
+
+export function wpTemplate({ pages }) {
   return {
     name: 'wp-template',
     // Пишем после сборки: к этому моменту манифест на месте, и папка assets
-    // уже очищена — файл рядом с ней не заденет
+    // уже очищена — файлы рядом с ней не заденет
     closeBundle() {
-      const html = fs.readFileSync(src, 'utf8');
-      fs.mkdirSync(path.dirname(out), { recursive: true });
-      fs.writeFileSync(out, toPhp(html));
-      console.log(`  шаблон темы: ${ path.basename(out) } собран из ${ path.basename(src) }`);
+      for (const { src, out } of pages) {
+        const name = path.basename(out);
+        const build = BUILDERS[name];
+
+        if (!build) {
+          throw new Error(`Нет сборщика для ${ name }`);
+        }
+
+        fs.mkdirSync(path.dirname(out), { recursive: true });
+        fs.writeFileSync(out, build(fs.readFileSync(src, 'utf8')));
+        console.log(`  шаблон темы: ${ name } собран из ${ path.basename(src) }`);
+      }
     },
   };
 }

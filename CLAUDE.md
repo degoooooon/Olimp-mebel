@@ -18,8 +18,9 @@ npm run build:theme   # тема WordPress в wp-theme/olimp/
 
 ## Где здесь легко сломать молча
 
-`build/wp-template.js` превращает `index.html` в `front-page.php` через
-`.replace()` по точным строкам разметки. Поправишь вёрстку — подмена
+`build/wp-template.js` собирает два шаблона: `front-page.php` из `index.html`
+и `single-olimp_product.php` из `tovar.html`. Оба — через `.replace()`
+по точным строкам разметки. Поправишь вёрстку — подмена
 перестанет находить своё место. Ошибки не будет: сборка пройдёт, а на
 сайте пропадёт подстановка.
 
@@ -30,6 +31,8 @@ grep -c 'home_url' wp-theme/olimp/front-page.php          # 3
 grep -c 'olimp-mebel26\.ru' wp-theme/olimp/front-page.php # 0
 grep -cE 'olimp_(cards|tiles|chips|count|catalog_json)\(\)' \
   wp-theme/olimp/front-page.php                           # 5
+grep -c 'olimp_product_page()' \
+  wp-theme/olimp/single-olimp_product.php                 # 1
 ```
 
 Разошлось — значит подмена в `wp-template.js` промахнулась мимо строки,

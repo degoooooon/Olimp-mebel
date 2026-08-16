@@ -336,14 +336,6 @@
   </div>
 </footer>
 
-<div class="product-overlay" id="product-overlay" hidden></div>
-<div class="product" id="product" role="dialog" aria-modal="true" hidden>
-  <button class="product__close" type="button" id="product-close" aria-label="Закрыть карточку товара">
-    <svg class="icon" aria-hidden="true"><use href="<?php echo esc_url( olimp_sprite() ); ?>#i-x"/></svg>
-  </button>
-  <div class="product__inner" id="product-inner"></div>
-</div>
-
 <div class="cart-overlay" id="cart-overlay" hidden></div>
 <aside class="cart" id="cart-drawer" role="dialog" aria-modal="true" aria-labelledby="cart-title" hidden>
   <div class="cart__head">

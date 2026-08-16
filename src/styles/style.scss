@@ -58,13 +58,9 @@
 @use "blocks/feature";
 @use "blocks/footer";
 
-// Окно товара
-@use "blocks/product-overlay";
-@use "blocks/product";
+// Страница товара
 @use "blocks/gallery";
 @use "blocks/specs";
-// Отдельная страница товара. Подключается после product: там те же
-// характеристики, и правки страницы не должны перебивать окно
 @use "blocks/tovar";
 
 // Корзина
