@@ -326,16 +326,28 @@ function olimp_fields() {
 		'olimp_price'     => array(
 			'label' => 'Цена, ₽',
 			'type'  => 'number',
+			'box'   => 'side',
 			'hint'  => 'Оставьте пустым — на карточке будет «Цена по запросу»',
 		),
 		'olimp_old_price' => array(
 			'label' => 'Старая цена, ₽',
 			'type'  => 'number',
+			'box'   => 'side',
 			'hint'  => 'Если больше текущей, на карточке появится размер скидки',
+		),
+		'olimp_specs'     => array(
+			'label' => 'Характеристики',
+			'type'  => 'textarea',
+			// Отдельным блоком под редактором, а не в боковой колонке:
+			// сюда вставляют десяток строк из прайса поставщика, в узкую
+			// колонку такое не помещается
+			'box'   => 'normal',
+			'hint'  => 'По строке на характеристику, название и значение через двоеточие: «Ширина, см: 220». Строки без двоеточия пропускаются',
 		),
 		'olimp_in_stock'  => array(
 			'label'   => 'В наличии',
 			'type'    => 'checkbox',
+			'box'     => 'side',
 			'hint'    => 'Снимите галочку — кнопка «В корзину» станет неактивной',
 			// Новый товар считаем имеющимся: так чаще всего и есть, а забытая
 			// галочка спрятала бы его с витрины
@@ -344,6 +356,7 @@ function olimp_fields() {
 		'olimp_is_new'    => array(
 			'label'   => 'Новинка',
 			'type'    => 'checkbox',
+			'box'     => 'side',
 			'hint'    => 'Плашка на карточке. Ставьте выборочно: если отметить всё, плашка перестанет что-либо значить',
 			// По умолчанию снята: иначе при первом наполнении каталога
 			// «Новинка» встала бы на каждый товар разом
@@ -360,19 +373,48 @@ add_action( 'add_meta_boxes', 'olimp_add_meta_box' );
  * @return void
  */
 function olimp_add_meta_box() {
-	add_meta_box( 'olimp-details', 'Цена и наличие', 'olimp_meta_box', 'olimp_product', 'side', 'high' );
+	add_meta_box( 'olimp-details', 'Цена и наличие', 'olimp_meta_box_side', 'olimp_product', 'side', 'high' );
+	add_meta_box( 'olimp-specs', 'Характеристики', 'olimp_meta_box_normal', 'olimp_product', 'normal', 'high' );
 }
 
 /**
- * Рисует поля.
+ * Рисует поля боковой колонки.
+ *
+ * Nonce печатает только этот блок: он один на всю форму, а форма у страницы
+ * записи общая. Напечатать его дважды — значит отправить два поля с одним
+ * именем, и до проверки дойдёт только последнее.
  *
  * @param WP_Post $post Текущая запись.
  * @return void
  */
-function olimp_meta_box( $post ) {
+function olimp_meta_box_side( $post ) {
 	wp_nonce_field( 'olimp_save_fields', 'olimp_nonce' );
+	olimp_meta_box( $post, 'side' );
+}
 
+/**
+ * Рисует поля под редактором.
+ *
+ * @param WP_Post $post Текущая запись.
+ * @return void
+ */
+function olimp_meta_box_normal( $post ) {
+	olimp_meta_box( $post, 'normal' );
+}
+
+/**
+ * Рисует поля одного блока.
+ *
+ * @param WP_Post $post Текущая запись.
+ * @param string  $box  Какой блок рисуем: side или normal.
+ * @return void
+ */
+function olimp_meta_box( $post, $box ) {
 	foreach ( olimp_fields() as $key => $field ) {
+		if ( $field['box'] !== $box ) {
+			continue;
+		}
+
 		$value = get_post_meta( $post->ID, $key, true );
 
 		echo '<p><label for="' . esc_attr( $key ) . '"><strong>' . esc_html( $field['label'] ) . '</strong></label><br>';
@@ -383,6 +425,15 @@ function olimp_meta_box( $post ) {
 			$checked = ( '' === $value ) ? $field['default'] : (bool) $value;
 			echo '<input type="checkbox" id="' . esc_attr( $key ) . '" name="' . esc_attr( $key ) . '" value="1"' . checked( $checked, true, false ) . '> ';
 			echo esc_html( $field['hint'] ) . '</p>';
+			continue;
+		}
+
+		if ( 'textarea' === $field['type'] ) {
+			// esc_textarea, а не esc_attr: значение идёт между тегами,
+			// и переводы строк должны сохраниться — иначе весь список
+			// характеристик слипнется в одну строку при каждом открытии
+			echo '<textarea class="widefat" id="' . esc_attr( $key ) . '" name="' . esc_attr( $key ) . '" rows="10">' . esc_textarea( (string) $value ) . '</textarea>';
+			echo '<span class="description">' . esc_html( $field['hint'] ) . '</span></p>';
 			continue;
 		}
 
@@ -414,6 +465,21 @@ function olimp_save_fields( $post_id ) {
 	foreach ( olimp_fields() as $key => $field ) {
 		if ( 'checkbox' === $field['type'] ) {
 			update_post_meta( $post_id, $key, isset( $_POST[ $key ] ) ? '1' : '0' );
+			continue;
+		}
+
+		if ( 'textarea' === $field['type'] ) {
+			// sanitize_textarea_field, а не sanitize_text_field: второй вырезает
+			// переводы строк, и десять характеристик превратились бы в одну
+			// строку без разделителей — разобрать её обратно уже нечем
+			$text = isset( $_POST[ $key ] ) ? sanitize_textarea_field( wp_unslash( $_POST[ $key ] ) ) : '';
+
+			if ( '' === trim( $text ) ) {
+				delete_post_meta( $post_id, $key );
+				continue;
+			}
+
+			update_post_meta( $post_id, $key, $text );
 			continue;
 		}
 
@@ -502,6 +568,67 @@ function olimp_categories() {
 }
 
 /**
+ * Разбирает характеристики из текстового поля в пары «название — значение».
+ *
+ * Владелец вставляет их строками из прайса поставщика, как есть:
+ *
+ *     Ширина, см: 220
+ *     Наполнитель: пружинный блок, войлок, пенополиуретан
+ *
+ * Отдельных полей под каждый размер нет намеренно: набор характеристик
+ * у дивана и у шкафа разный, и фиксированная форма показывала бы на шкафу
+ * пустые «ширина спального места». Заодно так добавляются характеристики,
+ * о которых мы сейчас не знаем, — без правки темы.
+ *
+ * Двоеточие ищем первое: значение вроде «Механизм: дельфин, тик-так»
+ * может содержать свои знаки, и делить надо один раз.
+ *
+ * @param string $raw Содержимое поля.
+ * @return array<int, array<string, string>>
+ */
+function olimp_parse_specs( $raw ) {
+	$out = array();
+
+	// \R ловит любой перевод строки: у вставленного из Word и из мессенджера
+	// они разные, а строки должны разобраться одинаково.
+	//
+	// Модификатор u обязателен. Без него регулярка работает по байтам, а \R
+	// среди прочего означает \x85 — второй байт буквы «х» в UTF-8. Регулярка
+	// принимала середину буквы за перевод строки и резала слово: «Механизм»
+	// превращался в «анизм», и характеристика уезжала под чужим названием.
+	// На битой кодировке preg_split с модификатором u возвращает false,
+	// а обход false в PHP 8 — фатальная ошибка, то есть белый экран вместо
+	// каталога. Лучше показать товар без характеристик, чем уронить витрину
+	$lines = preg_split( '/\R/u', (string) $raw );
+
+	if ( ! is_array( $lines ) ) {
+		return $out;
+	}
+
+	foreach ( $lines as $line ) {
+		if ( ! str_contains( $line, ':' ) ) {
+			continue;
+		}
+
+		list( $name, $value ) = explode( ':', $line, 2 );
+
+		$name  = trim( $name );
+		$value = trim( $value );
+
+		if ( '' === $name || '' === $value ) {
+			continue;
+		}
+
+		$out[] = array(
+			'name'  => $name,
+			'value' => $value,
+		);
+	}
+
+	return $out;
+}
+
+/**
  * Товары в том виде, в каком их ждёт фронтенд.
  *
  * @return array<int, array<string, mixed>>
@@ -552,6 +679,15 @@ function olimp_products() {
 
 		if ( '' !== $price ) {
 			$item['price'] = (int) $price;
+		}
+
+		// Ключа specs у товара без характеристик нет вовсе — фронтенд
+		// проверяет наличие, а не длину, и пустой массив рисовал бы
+		// заголовок «Характеристики» над пустотой
+		$specs = olimp_parse_specs( get_post_meta( $post->ID, 'olimp_specs', true ) );
+
+		if ( $specs ) {
+			$item['specs'] = $specs;
 		}
 
 		$thumb = get_post_thumbnail_id( $post->ID );

@@ -62,6 +62,51 @@
   padding: 0;
 }
 
+// С характеристиками содержимое перестаёт помещаться в экран телефона.
+// У .product стоит overflow: hidden — прокрутку даём здесь, иначе низ списка
+// просто обрежется и до цены будет не добраться. Модификатор ставит скрипт:
+// он один знает, заполнены характеристики у этого товара или нет.
+.product__inner--full {
+  align-content: start;
+  gap: 24px;
+  max-height: calc(100vh - 40px); // запасной вариант для браузеров без dvh
+  max-height: calc(100dvh - 40px);
+  overflow-y: auto;
+  // Докрутив список до конца, страница под окном прокручиваться не начнёт
+  overscroll-behavior: contain;
+}
+
+.product__media {
+  display: grid;
+  place-items: center;
+  width: 100%;
+}
+
+.product__body {
+  width: 100%;
+}
+
+.product__name {
+  margin: 0 0 8px;
+  font-family: var(--font-d);
+  font-size: 24px;
+  line-height: 1.2;
+  color: var(--ink);
+}
+
+.product__price {
+  margin: 0 0 16px;
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--accent-dark);
+}
+
+.product__price--ask {
+  font-size: 18px;
+  font-weight: 400;
+  color: var(--muted);
+}
+
 .product__illustration {
   width: 100%;
   max-width: 480px;

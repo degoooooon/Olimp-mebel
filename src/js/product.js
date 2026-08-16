@@ -2,7 +2,7 @@
 // Открывается кликом по карточке каталога — везде, кроме кнопки «В корзину»:
 // она остаётся быстрым действием и окно не открывает.
 import { PRODUCTS } from './data.js';
-import { esc } from './utils.js';
+import { esc, fmt } from './utils.js';
 import { SPRITE, grid, productModal, productOverlay, productInner, productClose } from './dom.js';
 
 let lastFocused = null;
@@ -10,13 +10,52 @@ let hideTimer = null; // отложенное hidden, пока идёт аним
 
 const FOCUSABLE = 'a[href], button:not(:disabled), input, select, textarea, [tabindex]:not([tabindex="-1"])';
 
+// Характеристики приходят из админки парами «название — значение». Их может
+// не быть вовсе: у части товаров описание ещё не заполнили, и тогда окно
+// остаётся тем же просмотром фотографии, каким было раньше.
+function specsHTML(p) {
+  if (!p.specs) {
+    return '';
+  }
+
+  const rows = p.specs.map((s) =>
+    `<div class="specs__row">
+      <dt class="specs__name">${ esc(s.name) }</dt>
+      <dd class="specs__value">${ esc(s.value) }</dd>
+    </div>`).join('');
+
+  return `<dl class="specs">${ rows }</dl>`;
+}
+
 function render(p) {
-  // Фото занимает окно целиком, рисованная иллюстрация — с полями на подложке
-  productInner.classList.toggle('product__inner--photo', Boolean(p.photo));
   const name = esc(p.name);
-  productInner.innerHTML = p.photo
+  const specs = specsHTML(p);
+  const media = p.photo
     ? `<img class="product__photo" src="${ esc(p.photo) }" alt="${ name }">`
     : `<svg class="product__illustration" viewBox="0 0 200 150" role="img" aria-label="${ name }"><use href="${ SPRITE }#i-${ esc(p.img) }"/></svg>`;
+
+  // Фото занимает окно целиком, рисованная иллюстрация — с полями на подложке.
+  // С характеристиками фото перестаёт быть единственным содержимым, и поля
+  // снова нужны — иначе текст лёг бы вплотную к краям окна.
+  productInner.classList.toggle('product__inner--photo', Boolean(p.photo) && !specs);
+  productInner.classList.toggle('product__inner--full', Boolean(specs));
+
+  if (!specs) {
+    productInner.innerHTML = media;
+    return;
+  }
+
+  const price = Number.isFinite(p.price)
+    ? `<p class="product__price">${ fmt(p.price) }</p>`
+    : '<p class="product__price product__price--ask">Цена по запросу</p>';
+
+  productInner.innerHTML = `
+    <div class="product__media">${ media }</div>
+    <div class="product__body">
+      <h2 class="product__name">${ name }</h2>
+      ${ price }
+      ${ specs }
+    </div>`;
 }
 
 // aria-modal обещает, что фокус заперт внутри — держим слово
