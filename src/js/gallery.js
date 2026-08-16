@@ -83,11 +83,29 @@ export function initGallery(root) {
     const show = (i) => {
       photos.forEach((el, n) => el.classList.toggle(ACTIVE, n === i));
       thumbs.forEach((el, n) => el.classList.toggle(ON, n === i));
+      // Подтягиваем выбранную миниатюру в видимую часть ряда. Без этого
+      // при десятке снимков листание стрелками уводит на кадр, миниатюра
+      // которого осталась за краем, и непонятно, где ты находишься
+      thumbs[i]?.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: 'smooth' });
     };
 
     thumbs.forEach((thumb, i) => {
       thumb.addEventListener('click', () => show(i));
     });
+
+    // Стрелки нужны и на компьютере, если миниатюры перестали помещаться
+    // в ряд: тогда нужной может не быть на экране вовсе. Считаем по факту,
+    // а не по числу снимков — влезет ли восемь миниатюр, зависит от ширины
+    // окна, а не от того, сколько их завёл владелец. Поэтому и пересчитываем
+    // при изменении размера окна.
+    const strip = gallery.querySelector('.gallery__thumbs');
+
+    const checkFit = () => {
+      gallery.classList.toggle('gallery--many', strip.scrollWidth > strip.clientWidth + 1);
+    };
+
+    checkFit();
+    window.addEventListener('resize', checkFit);
 
     // По кругу: с последнего снимка «вперёд» ведёт на первый. Иначе на краю
     // кнопка перестаёт отвечать, и это читается как поломка

@@ -18,12 +18,16 @@ import { initSort } from './sort.js';
 import { initCatalog } from './catalog.js';
 import { initCart } from './cart.js';
 import { initReveal } from './reveal.js';
+import { initGallery } from './gallery.js';
 
 initNav();
 initCats();
 initSort();
 initCatalog();
 initCart();
+// Галерея на странице товара. Её разметку печатает PHP, поэтому включать
+// переключение надо отсюда: на главной галерей нет и вызов ничего не делает
+initGallery(document);
 // Последним: к этому моменту плитки категорий уже нарисованы и попадут под наблюдение
 initReveal();
 

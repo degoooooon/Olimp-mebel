@@ -60,7 +60,6 @@
 // светлый кадр сливался бы с фоном страницы
 .tovar__media {
   display: grid;
-  padding: 16px;
   place-items: center;
   background: var(--paper);
   border-radius: var(--radius);
