@@ -56,20 +56,14 @@
   }
 }
 
-// Галерея столбцом: человек листает страницу, а не ищет стрелки
+// Подложка под галерею: снимки мебели сняты на разном фоне, и без неё
+// светлый кадр сливался бы с фоном страницы
 .tovar__media {
   display: grid;
-  gap: 12px;
+  padding: 16px;
   place-items: center;
-  padding: 24px;
   background: var(--paper);
   border-radius: var(--radius);
-}
-
-.tovar__photo {
-  width: 100%;
-  height: auto;
-  border-radius: calc(var(--radius) - 8px);
 }
 
 .tovar__illustration {

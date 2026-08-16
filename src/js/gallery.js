@@ -1,22 +1,17 @@
 // ─── Галерея снимков товара ───
 //
-// Снимки лежат стопкой, показан один. Поверх — полосы во всю высоту кадра:
-// сколько снимков, столько полос. Мышь идёт по кадру и переключает снимки,
-// ничего не нажимая. Так сделано у Авито и Paratype, и это удобнее стрелок:
-// не надо целиться в мелкий кружок.
+// Крупный кадр, под ним ряд миниатюр. Нажал на миниатюру — она встала
+// в крупный. Так устроены галереи на Авито и Озоне, и не случайно:
+// видно сразу, сколько снимков и что на них, а переключение — одно нажатие
+// в понятную цель.
 //
-// Указатель — не точки, а линия сверху, разрезанная на столько же кусков.
-// Кусок активного снимка светлый, остальные притушены: сразу видно и сколько
-// всего снимков, и какой открыт. Точки давали то же самое, но занимали угол
-// кадра и на светлой фотографии терялись.
-//
-// Полосы — настоящие кнопки, а не пустые блоки. Наведения на телефоне
-// не существует, и без этого галерея работала бы только у человека с мышью:
-// нажатие пальцем по левой, средней или правой трети переключает снимок.
+// Раньше здесь были невидимые зоны наведения с линией-указателем сверху.
+// Убрано: наведение работает только с мышью, а угадать, что по кадру можно
+// водить, человек не может — подсказки никакой. Миниатюра сама себе подсказка.
 import { esc } from './utils.js';
 
 const ACTIVE = 'gallery__photo--active';
-const ON = 'gallery__zone--on';
+const ON = 'gallery__thumb--on';
 
 /**
  * Разметка галереи.
@@ -33,29 +28,31 @@ export function galleryHTML(shots, alt, sizes) {
 
   const name = esc(alt);
 
-  // Один снимок — галерея не нужна: ни полос, ни указателя. Иначе под кадром
-  // висела бы одна линия во всю ширину, которая ничего не переключает
+  // Один снимок — ни миниатюр, ни стрелок: переключать нечего
   if (1 === shots.length) {
     return photo(shots[0], name, sizes, 0);
   }
 
-  const photos = shots.map((s, i) => photo(s, name, sizes, i)).join('');
+  const stage = shots.map((s, i) => photo(s, name, sizes, i)).join('');
 
-  const zones = shots.map((s, i) =>
-    `<button class="gallery__zone${ i ? '' : ` ${ ON }` }" type="button" aria-label="Снимок ${ i + 1 } из ${ shots.length }">
-      <span class="gallery__bar"></span>
-    </button>`).join('');
-
-  // Стрелки — для телефона и планшета. Наведения там нет, а невидимые полосы
-  // без подсказки не найти: человек не знает, что по кадру можно нажимать.
-  // На компьютере стрелки спрятаны стилями — там работает наведение,
-  // и две кнопки поверх фотографии только загораживали бы товар.
+  // Стрелки — для телефона и планшета. Наведения там нет, а миниатюра
+  // размером с ноготь на ходу попадается не с первого раза
   const arrows = ['prev', 'next'].map((dir) =>
     `<button class="gallery__arrow gallery__arrow--${ dir }" type="button" data-step="${ 'prev' === dir ? -1 : 1 }" aria-label="${ 'prev' === dir ? 'Предыдущий снимок' : 'Следующий снимок' }">
       <svg class="gallery__chevron" aria-hidden="true"><use href="${ spriteHref() }#i-chevron"/></svg>
     </button>`).join('');
 
-  return `<div class="gallery">${ photos }<div class="gallery__zones" style="--zones:${ shots.length }">${ zones }</div>${ arrows }</div>`;
+  // Миниатюры берут тот же файл, что и крупный кадр: он к этому моменту
+  // уже загружен, и переключение происходит мгновенно, без второго запроса
+  const thumbs = shots.map((s, i) =>
+    `<button class="gallery__thumb${ i ? '' : ` ${ ON }` }" type="button" aria-label="Снимок ${ i + 1 } из ${ shots.length }">
+      <img class="gallery__thumb-img" src="${ esc(s.photo) }" alt="" loading="lazy">
+    </button>`).join('');
+
+  return `<div class="gallery">
+    <div class="gallery__stage">${ stage }${ arrows }</div>
+    <div class="gallery__thumbs">${ thumbs }</div>
+  </div>`;
 }
 
 // Адрес спрайта берём из уже стоящей на странице ссылки: в собранной версии
@@ -67,8 +64,8 @@ function spriteHref() {
 function photo(s, name, sizes, i) {
   const srcset = s.srcset ? ` srcset="${ esc(s.srcset) }" sizes="${ esc(sizes) }"` : '';
 
-  // Первый снимок грузится сразу, остальные лениво: пока по ним не провели
-  // мышью, они не нужны, а это втрое меньше трафика при открытии карточки
+  // Первый снимок грузится сразу, остальные лениво: пока по ним не нажали,
+  // они не нужны, а это втрое меньше трафика при открытии страницы
   return `<img class="gallery__photo${ i ? '' : ` ${ ACTIVE }` }" src="${ esc(s.photo) }"${ srcset } alt="${ name }${ i ? ` — снимок ${ i + 1 }` : '' }"${ i ? ' loading="lazy"' : '' }>`;
 }
 
@@ -81,40 +78,25 @@ function photo(s, name, sizes, i) {
 export function initGallery(root) {
   for (const gallery of root.querySelectorAll('.gallery')) {
     const photos = [...gallery.querySelectorAll('.gallery__photo')];
-    const zones = [...gallery.querySelectorAll('.gallery__zone')];
+    const thumbs = [...gallery.querySelectorAll('.gallery__thumb')];
 
     const show = (i) => {
       photos.forEach((el, n) => el.classList.toggle(ACTIVE, n === i));
-      zones.forEach((el, n) => el.classList.toggle(ON, n === i));
+      thumbs.forEach((el, n) => el.classList.toggle(ON, n === i));
     };
 
-    zones.forEach((zone, i) => {
-      zone.addEventListener('mouseenter', () => show(i));
-      zone.addEventListener('click', () => show(i));
-      // Проход табом тоже листает: человек с клавиатуры увидит все снимки,
-      // ничего не нажимая
-      zone.addEventListener('focus', () => show(i));
+    thumbs.forEach((thumb, i) => {
+      thumb.addEventListener('click', () => show(i));
     });
 
     // По кругу: с последнего снимка «вперёд» ведёт на первый. Иначе на краю
     // кнопка перестаёт отвечать, и это читается как поломка
-    const step = (by) => {
-      const now = zones.findIndex((z) => z.classList.contains(ON));
-
-      show((now + by + photos.length) % photos.length);
-    };
-
     gallery.querySelectorAll('.gallery__arrow').forEach((arrow) => {
-      arrow.addEventListener('click', () => step(Number(arrow.dataset.step)));
+      arrow.addEventListener('click', () => {
+        const now = thumbs.findIndex((t) => t.classList.contains(ON));
+
+        show((now + Number(arrow.dataset.step) + photos.length) % photos.length);
+      });
     });
-
-    // Смахивание пальцем пробовали и убрали. Оно спорит с вертикальной
-    // прокруткой: палец на фотографии чаще ведёт страницу вниз, чем листает
-    // кадры, и жест срабатывает не тогда, когда его ждёшь. Стрелки этой
-    // двусмысленности не имеют — нажал и переключилось.
-
-    // Подписки на mouseleave нет намеренно: увели мышь — кадр остаётся тот,
-    // что смотрели. Возврат к первому сбрасывал бы выбор ровно в тот момент,
-    // когда человек отводит курсор, чтобы прочитать характеристики рядом.
   }
 }

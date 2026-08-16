@@ -1010,7 +1010,7 @@ function olimp_product_gallery( $id, $name ) {
 		return;
 	}
 
-	echo '<div class="gallery">';
+	echo '<div class="gallery"><div class="gallery__stage">';
 
 	foreach ( $ids as $i => $shot ) {
 		echo wp_get_attachment_image( $shot, 'olimp-card-3x', false, array(
@@ -1021,30 +1021,42 @@ function olimp_product_gallery( $id, $name ) {
 		) );
 	}
 
-	printf( '<div class="gallery__zones" style="--zones:%d">', count( $ids ) );
-
-	foreach ( $ids as $i => $shot ) {
-		printf(
-			'<button class="gallery__zone%1$s" type="button" aria-label="Снимок %2$d из %3$d"><span class="gallery__bar"></span></button>',
-			$i ? '' : ' gallery__zone--on',
-			$i + 1,
-			count( $ids )
-		);
-	}
-
-	echo '</div>';
-
-	foreach ( array( 'prev' => -1, 'next' => 1 ) as $dir => $stepe ) {
+	// Стрелки нужны только там, где нет мыши: стили показывают их
+	// при hover: none. Печатаем всегда — какое устройство у посетителя,
+	// на сервере неизвестно
+	foreach ( array( 'prev' => -1, 'next' => 1 ) as $dir => $shift ) {
 		printf(
 			'<button class="gallery__arrow gallery__arrow--%1$s" type="button" data-step="%2$d" aria-label="%3$s"><svg class="gallery__chevron" aria-hidden="true"><use href="%4$s#i-chevron"/></svg></button>',
 			esc_attr( $dir ),
-			$stepe,
+			$shift,
 			'prev' === $dir ? 'Предыдущий снимок' : 'Следующий снимок',
 			esc_url( olimp_sprite() )
 		);
 	}
 
-	echo '</div>';
+	echo '</div><div class="gallery__thumbs">';
+
+	foreach ( $ids as $i => $shot ) {
+		printf(
+			'<button class="gallery__thumb%1$s" type="button" aria-label="Снимок %2$d из %3$d">',
+			$i ? '' : ' gallery__thumb--on',
+			$i + 1,
+			count( $ids )
+		);
+
+		// Размер под миниатюру, а не полный кадр: 400px хватает на 72px
+		// с запасом под ретину, а полноразмерный снимок тянул бы мегабайты
+		// ради ногтя. alt пустой намеренно — подпись уже в кнопке, и дублировать
+		// её значит заставить скринридер прочитать одно и то же дважды
+		echo wp_get_attachment_image( $shot, 'olimp-card', false, array(
+			'class' => 'gallery__thumb-img',
+			'alt'   => '',
+		) );
+
+		echo '</button>';
+	}
+
+	echo '</div></div>';
 }
 
 /**
