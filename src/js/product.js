@@ -3,6 +3,7 @@
 // она остаётся быстрым действием и окно не открывает.
 import { PRODUCTS } from './data.js';
 import { esc, fmt } from './utils.js';
+import { idFromUrl, pushedByUs, pushProduct, dropProduct } from './product-url.js';
 import { SPRITE, grid, productModal, productOverlay, productInner, productClose } from './dom.js';
 
 let lastFocused = null;
@@ -107,35 +108,84 @@ function close() {
   }
 }
 
+const isOpen = () => productModal.classList.contains('product--open');
+
+const byId = (id) => PRODUCTS.find((p) => String(p.id) === String(id)) ?? null;
+
+// Единственное место, которое решает, открыто окно или нет: что написано
+// в адресе, то и показано. Иначе состояние окна и адрес разъезжаются —
+// например, при нажатии «назад» окно оставалось бы висеть поверх каталога.
+function syncFromUrl() {
+  const p = byId(idFromUrl());
+
+  if (p) {
+    open(p);
+  } else if (isOpen()) {
+    close();
+  }
+}
+
+// Закрытие по кнопке, оверлею и Escape. Если окно открыли нажатием на
+// карточку, в истории лежит наша запись — уходим назад, и тогда кнопка
+// «назад» в браузере тоже закрывает окно, а не уносит с сайта. Если человек
+// пришёл по ссылке сразу на товар, возвращаться некуда: чистим адрес,
+// чтобы обновление страницы не открыло окно снова.
+function closeByUser() {
+  if (pushedByUs()) {
+    history.back();
+    return;
+  }
+
+  dropProduct();
+  close();
+}
+
 export function initProduct() {
   grid.addEventListener('click', (e) => {
     // Кнопка «В корзину» — быстрое действие, окно по ней не открываем
     if (e.target.closest('[data-add]')) {
       return;
     }
-    // С клавиатуры фокус попадает на изображение-кнопку, мышью удобно
+    // С клавиатуры фокус попадает на изображение-ссылку, мышью удобно
     // ткнуть в любое место карточки — принимаем оба варианта
     const card = e.target.closest('.card');
     if (!card) {
       return;
     }
-    const p = PRODUCTS.find((x) => x.id === +card.dataset.id);
-    if (p) {
-      open(p);
+    // Открытие в новой вкладке оставляем браузеру: Ctrl, Cmd, Shift и средняя
+    // кнопка должны работать как на любой ссылке. Ради этого карточка и стала
+    // ссылкой — перехватив всё подряд, мы бы отняли то, что сами же дали
+    if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || 0 !== e.button) {
+      return;
     }
+
+    const p = byId(card.dataset.id);
+
+    if (!p) {
+      return;
+    }
+
+    e.preventDefault();
+    pushProduct(p.id);
+    open(p);
   });
 
-  productClose.addEventListener('click', close);
-  productOverlay.addEventListener('click', close);
+  productClose.addEventListener('click', closeByUser);
+  productOverlay.addEventListener('click', closeByUser);
 
   document.addEventListener('keydown', (e) => {
-    if (!productModal.classList.contains('product--open')) {
+    if (!isOpen()) {
       return;
     }
     if (e.key === 'Escape') {
-      close();
+      closeByUser();
     } else if (e.key === 'Tab') {
       keepFocusInside(e);
     }
   });
+
+  window.addEventListener('popstate', syncFromUrl);
+
+  // Пришли по ссылке на товар — открываем сразу, не дожидаясь нажатия
+  syncFromUrl();
 }

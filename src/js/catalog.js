@@ -2,6 +2,7 @@
 // Переключатели категорий тоже собираются здесь — из общего списка CATEGORIES.
 import { PRODUCTS, CATEGORIES } from './data.js';
 import { fmt, smooth, esc } from './utils.js';
+import { productUrl } from './product-url.js';
 import { cart } from './state.js';
 import {
   SPRITE,
@@ -114,11 +115,11 @@ function cardHTML(p, i) {
     : `<svg class="card__illustration" viewBox="0 0 200 150" role="img" aria-label="${name}"><use href="${SPRITE}#i-${esc(p.img)}"/></svg>`;
   return `
   <article class="card" data-id="${p.id}" style="animation-delay:${Math.min(i * 45, 360)}ms">
-    <button class="card__media${p.photo ? ' card__media--photo' : ''}" type="button"
-      data-more="${p.id}" aria-label="Подробнее: ${name}">
+    <a class="card__media${p.photo ? ' card__media--photo' : ''}"
+      href="${productUrl(p.id)}" data-more="${p.id}" aria-label="Подробнее: ${name}">
       <span class="card__badges">${badge(p)}</span>
       ${media}
-    </button>
+    </a>
     <div class="card__body">
       <h3 class="card__name">${name}</h3>
       <div class="card__row">
