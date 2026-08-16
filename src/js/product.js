@@ -4,6 +4,7 @@
 import { PRODUCTS } from './data.js';
 import { esc, fmt } from './utils.js';
 import { specsHTML } from './specs.js';
+import { galleryHTML, initGallery } from './gallery.js';
 import { idFromUrl, pushedByUs, pushProduct, dropProduct } from './product-url.js';
 import { SPRITE, grid, productModal, productOverlay, productInner, productClose } from './dom.js';
 
@@ -15,13 +16,10 @@ const FOCUSABLE = 'a[href], button:not(:disabled), input, select, textarea, [tab
 function render(p) {
   const name = esc(p.name);
   const specs = specsHTML(p);
-  // Снимков может быть несколько. Показываем их в столбец, а не каруселью:
-  // листалка требует стрелок или свайпа, а на карточке мебели человеку нужно
-  // сравнить ракурсы — прокрутка для этого удобнее переключения.
-  const gallery = p.photos ?? (p.photo ? [{ photo: p.photo, srcset: p.srcset }] : []);
+  const shots = p.photos ?? (p.photo ? [{ photo: p.photo, srcset: p.srcset }] : []);
 
-  const media = gallery.length
-    ? gallery.map((g, i) => `<img class="product__photo" src="${ esc(g.photo) }"${ g.srcset ? ` srcset="${ esc(g.srcset) }" sizes="(min-width: 760px) 680px, 92vw"` : '' } alt="${ name }${ i ? ` — снимок ${ i + 1 }` : '' }"${ i ? ' loading="lazy"' : '' }>`).join('')
+  const media = shots.length
+    ? galleryHTML(shots, p.name, '(min-width: 760px) 680px, 92vw')
     : `<svg class="product__illustration" viewBox="0 0 200 150" role="img" aria-label="${ name }"><use href="${ SPRITE }#i-${ esc(p.img) }"/></svg>`;
 
   // Фото занимает окно целиком, рисованная иллюстрация — с полями на подложке.
@@ -32,6 +30,7 @@ function render(p) {
 
   if (!specs) {
     productInner.innerHTML = media;
+    initGallery(productInner);
     return;
   }
 
@@ -46,6 +45,10 @@ function render(p) {
       ${ price }
       ${ specs }
     </div>`;
+
+  // Переключение снимков включаем после вставки: до неё элементов
+  // в документе ещё нет, и подписываться было бы не на что
+  initGallery(productInner);
 }
 
 // aria-modal обещает, что фокус заперт внутри — держим слово

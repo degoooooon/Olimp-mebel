@@ -1,0 +1,76 @@
+// ─── Галерея снимков: наведение по зонам ───
+// Снимки лежат стопкой, поверх — невидимые полосы во всю высоту кадра.
+// Мышь идёт по кадру и переключает снимки, ничего не нажимая.
+
+.gallery {
+  position: relative;
+  // Ширину задаём явно: снимки внутри лежат абсолютно, своего содержимого
+  // у блока нет, и в родителе с place-items: center он схлопнулся бы в точку
+  // вместе с зонами наведения
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  overflow: hidden;
+  border-radius: calc(var(--radius) - 8px);
+  background: var(--paper);
+}
+
+// Все снимки на одном месте, виден один. Через opacity, а не display:
+// display: none сбрасывает уже загруженную картинку в некоторых движках,
+// и при возврате мыши кадр моргает
+.gallery__photo {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+
+.gallery__photo--active {
+  opacity: 1;
+}
+
+// Полосы во всю высоту: сколько снимков, столько колонок. Число приходит
+// переменной из скрипта — иначе пришлось бы держать правила на два, три
+// и четыре снимка, а их количество задаёт владелец в админке
+.gallery__zones {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  grid-template-columns: repeat(var(--zones), 1fr);
+}
+
+.gallery__dots {
+  position: absolute;
+  right: 0;
+  bottom: 8px;
+  left: 0;
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+}
+
+// Точка мелкая, но нажимать по ней пальцем надо: сама метка 6px, а область
+// нажатия расширена прозрачной рамкой до 20px — иначе на телефоне не попасть
+.gallery__dot {
+  width: 6px;
+  height: 6px;
+  padding: 0;
+  border: 7px solid transparent;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.6);
+  background-clip: content-box;
+  box-shadow: 0 0 3px rgba(0, 0, 0, 0.35);
+}
+
+.gallery__dot--on {
+  background-color: #ffffff;
+}
+
+// На тач-экранах наведения нет, зоны только мешали бы прокрутке пальцем
+@media (hover: none) {
+  .gallery__zones {
+    display: none;
+  }
+}

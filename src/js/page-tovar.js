@@ -8,6 +8,7 @@
 import { PRODUCTS, CATEGORIES } from './data.js';
 import { esc, fmt } from './utils.js';
 import { specsHTML } from './specs.js';
+import { galleryHTML, initGallery } from './gallery.js';
 import { idFromUrl } from './product-url.js';
 import { ORDER_PHONE, MAX_LINK } from './state.js';
 
@@ -27,11 +28,10 @@ if (!product) {
   const name = esc(product.name);
   const cat = CATEGORIES.find((c) => c.id === product.cat);
 
-  // Все снимки товара, а не только первый: ради них страница и заводилась
-  const gallery = product.photos ?? (product.photo ? [{ photo: product.photo, srcset: product.srcset }] : []);
+  const shots = product.photos ?? (product.photo ? [{ photo: product.photo, srcset: product.srcset }] : []);
 
-  const media = gallery.length
-    ? gallery.map((g, i) => `<img class="tovar__photo" src="${ esc(g.photo) }"${ g.srcset ? ` srcset="${ esc(g.srcset) }" sizes="(min-width: 900px) 520px, 92vw"` : '' } alt="${ name }${ i ? ` — снимок ${ i + 1 }` : '' }"${ i ? ' loading="lazy"' : '' }>`).join('')
+  const media = shots.length
+    ? galleryHTML(shots, product.name, '(min-width: 900px) 520px, 92vw')
     : `<svg class="tovar__illustration" viewBox="0 0 200 150" role="img" aria-label="${ name }"><use href="${ document.querySelector('use[href*="spritemap"]')?.getAttribute('href').split('#')[0] ?? '' }#i-${ esc(product.img) }"/></svg>`;
 
   const price = Number.isFinite(product.price)
@@ -64,6 +64,8 @@ if (!product) {
         ${ specsHTML(product) || '<p class="tovar__nospecs">Характеристики пока не заполнены.</p>' }
       </div>
     </div>`;
+
+  initGallery(root);
 
   // Название товара в заголовке вкладки и в описании. На живом сайте это
   // сделает WordPress до отдачи страницы; здесь — сразу после отрисовки,
