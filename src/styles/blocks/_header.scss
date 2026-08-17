@@ -6,6 +6,9 @@
   top: 0;
   z-index: 50;
   background: rgba(246, 241, 231, 0.86);
+  // Ниже планки Baseline: в Safari backdrop-filter только с 18. Пропадёт —
+  // останется полупрозрачный фон строкой выше, он и есть запасной вариант.
+  // Поэтому цвет фона задан отдельно, а не только размытием
   backdrop-filter: blur(10px);
   border-bottom: 1px solid var(--line);
 }

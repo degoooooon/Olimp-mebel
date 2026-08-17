@@ -11,6 +11,9 @@
 .check__input {
   width: 18px;
   height: 18px;
+  // Ниже планки Baseline: в Safari accent-color только с 26.2. Пропадёт —
+  // галочка станет системной синей вместо терракотовой. Украшение, а не
+  // условие работы, поэтому оставляем
   accent-color: var(--accent);
   cursor: pointer;
   margin: 0;

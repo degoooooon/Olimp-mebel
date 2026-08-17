@@ -32,6 +32,8 @@
   color: rgba(177, 78, 43, 0.05);
   -webkit-text-stroke: 1.5px rgba(177, 78, 43, 0.2);
   pointer-events: none;
+  // Ниже планки Baseline: в Safari стандартного user-select нет. Пропадёт —
+  // декоративную надпись станет можно выделить мышью. Ничего не ломает
   user-select: none;
   z-index: 0;
 }
