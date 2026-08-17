@@ -113,15 +113,22 @@ function cardHTML(p, i) {
   const media = p.photo
     ? `<img class="card__photo" src="${esc(p.photo)}" alt="${name}"${srcset(p)} loading="lazy">`
     : `<svg class="card__illustration" viewBox="0 0 200 150" role="img" aria-label="${name}"><use href="${SPRITE}#i-${esc(p.img)}"/></svg>`;
+  // Ссылок на товар две: фотография и название. Люди жмут и туда, и туда,
+  // а когда ссылкой была только картинка, нажатие по названию не делало
+  // ничего — выглядело как поломка сайта.
+  //
+  // Фотография при этом убрана из обхода табом и от скринридера: она ведёт
+  // туда же, куда название, и вторая остановка на том же адресе только
+  // удлиняет путь с клавиатуры. Подпись читается с названия, она и так текст.
   return `
   <article class="card" data-id="${p.id}" style="animation-delay:${Math.min(i * 45, 360)}ms">
     <a class="card__media${p.photo ? ' card__media--photo' : ''}"
-      href="${productUrl(p)}" aria-label="Подробнее: ${name}">
+      href="${productUrl(p)}" tabindex="-1" aria-hidden="true">
       <span class="card__badges">${badge(p)}</span>
       ${media}
     </a>
     <div class="card__body">
-      <h3 class="card__name">${name}</h3>
+      <h3 class="card__name"><a class="card__link" href="${productUrl(p)}">${name}</a></h3>
       <div class="card__row">
         <div class="price">
           ${Number.isFinite(p.price)

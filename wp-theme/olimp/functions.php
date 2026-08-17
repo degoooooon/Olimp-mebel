@@ -818,15 +818,24 @@ function olimp_cards() {
 				. ( empty( $p['old'] ) ? '' : '<s class="price__old">' . esc_html( olimp_price( $p['old'] ) ) . '</s>' )
 			: '<span class="price__ask">Цена по запросу</span>';
 
+		// Ссылок на товар две: фотография и название. Люди жмут и туда, и туда,
+		// а когда ссылкой была только картинка, нажатие по названию не делало
+		// ничего — выглядело как поломка сайта.
+		//
+		// Фотография убрана из обхода табом и от скринридера: она ведёт туда же,
+		// куда название, и вторая остановка на том же адресе только удлиняет
+		// путь с клавиатуры.
+		$url = esc_url( get_permalink( $p['id'] ) );
+
 		echo '
 	<article class="card" data-id="' . (int) $p['id'] . '" style="animation-delay:' . (int) $delay . 'ms">
-		<button class="card__media' . ( empty( $p['photo'] ) ? '' : ' card__media--photo' ) . '" type="button"
-			data-more="' . (int) $p['id'] . '" aria-label="Подробнее: ' . $name . '">
+		<a class="card__media' . ( empty( $p['photo'] ) ? '' : ' card__media--photo' ) . '"
+			href="' . $url . '" tabindex="-1" aria-hidden="true">
 			<span class="card__badges">' . olimp_badge( $p ) . '</span>
 			' . $media . '
-		</button>
+		</a>
 		<div class="card__body">
-			<h3 class="card__name">' . esc_html( $p['name'] ) . '</h3>
+			<h3 class="card__name"><a class="card__link" href="' . $url . '">' . esc_html( $p['name'] ) . '</a></h3>
 			<div class="card__row">
 				<div class="price">' . $price . '</div>
 				' . $add . '
