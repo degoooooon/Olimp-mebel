@@ -31,6 +31,17 @@
     <svg class="topbar__arrow" aria-hidden="true"><use href="/__spritemap#i-arrow"/></svg>
     В каталог
   </a>
+  <!--
+    Корзина здесь только показывает набранное и ведёт в каталог, где панель
+    и выезжает. Копии панели на этой странице нет: одна разметка в двух файлах
+    расходится, вопрос только в сроке. Адрес с #cart открывает её сразу
+    после перехода — иначе человек попал бы в каталог и искал корзину заново.
+  -->
+  <a class="topbar__cart" href="./#cart">
+    <svg class="icon" aria-hidden="true"><use href="/__spritemap#i-bag"/></svg>
+    Корзина
+    <span class="topbar__count" data-cart-count hidden>0</span>
+  </a>
 </header>
 
 <main class="tovar" id="tovar">

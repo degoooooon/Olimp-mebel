@@ -163,6 +163,41 @@ function olimp_setup() {
 	add_image_size( 'olimp-card-3x', 1600, 1200, true );
 }
 
+add_filter( 'image_editor_output_format', 'olimp_upload_to_webp' );
+
+/**
+ * Нарезки всегда в webp, чем бы ни был загруженный файл.
+ *
+ * Владелец добавляет товары с телефона, а телефон снимает в jpeg или heic.
+ * Ждать, что он каждый раз прогонит снимки через конвертер, бессмысленно:
+ * один раз забудет, и на витрине окажется jpeg вдвое тяжелее. Поэтому
+ * перекодировкой занимается сайт, а не человек.
+ *
+ * Своё правило не выдумываем: WordPress сам решает этим фильтром, чем сохранять
+ * производные размеры, и по умолчанию переводит heic в jpeg. Мы меняем цель
+ * на webp и добавляем в список jpeg с png.
+ *
+ * Оригинал остаётся в том формате, в каком его загрузили, — фильтр про нарезки.
+ * На витрину оригинал не попадает, пока он шире 1600px: тогда создаётся
+ * olimp-card-3x и берётся он. Снимок уже 1600px — производных нет, и в разметку
+ * уйдёт сам файл. Отсюда правило «грузить от 1600px по длинной стороне».
+ *
+ * @param array<string, string> $formats Соответствие исходного типа целевому.
+ * @return array<string, string>
+ */
+function olimp_upload_to_webp( $formats ) {
+	// Переписываем и то, что WordPress положил сюда сам: heic по умолчанию
+	// уходит в jpeg, а нам нужен один формат на всю витрину
+	foreach ( array_keys( $formats ) as $type ) {
+		$formats[ $type ] = 'image/webp';
+	}
+
+	$formats['image/jpeg'] = 'image/webp';
+	$formats['image/png']  = 'image/webp';
+
+	return $formats;
+}
+
 add_action( 'template_redirect', 'olimp_front_title' );
 
 /**
@@ -1010,14 +1045,11 @@ function olimp_product_gallery( $id, $name ) {
 
 	$sizes = '(min-width: 900px) 520px, 92vw';
 
-	if ( 1 === count( $ids ) ) {
-		echo wp_get_attachment_image( $ids[0], 'olimp-card-3x', false, array(
-			'class' => 'gallery__photo gallery__photo--active',
-			'alt'   => $name,
-			'sizes' => $sizes,
-		) );
-		return;
-	}
+	// Один снимок — ни миниатюр, ни стрелок: переключать нечего. А обёртку
+	// печатаем всё равно: снимок лежит position: absolute, и без
+	// .gallery__stage ему не от чего отсчитывать inset — он растягивается
+	// на всю страницу. Ровно это и было у комода с единственной фотографией.
+	$one = 1 === count( $ids );
 
 	echo '<div class="gallery"><div class="gallery__stage">';
 
@@ -1028,6 +1060,11 @@ function olimp_product_gallery( $id, $name ) {
 			'sizes'   => $sizes,
 			'loading' => $i ? 'lazy' : 'eager',
 		) );
+	}
+
+	if ( $one ) {
+		echo '</div></div>';
+		return;
 	}
 
 	// Стрелки нужны только там, где нет мыши: стили показывают их

@@ -95,8 +95,20 @@ function singleProduct(html) {
     // Макет закрыт от индексации, настоящая страница — нет. Ради этого
     // всё и делалось: сорок один адрес вместо одного
     .replace(/<meta name="robots" content="noindex">\n/, '')
-    // Содержимое печатает PHP. Скрипт на этой странице не нужен вовсе:
-    // разметка приходит готовой, и поисковику, и человеку без JS
+    // Обе ссылки верхней полосы ведут в каталог. В макете это «./» — соседний
+    // index.html, а на живом сайте адрес товара выглядит как /tovar/divan/,
+    // и «./» — это сам этот адрес: ссылка возвращала на ту же страницу.
+    .replace(
+      '<a class="topbar__back" href="./">',
+      '<a class="topbar__back" href="<?php echo esc_url( home_url( \'/\' ) ); ?>">'
+    )
+    .replace(
+      '<a class="topbar__cart" href="./#cart">',
+      '<a class="topbar__cart" href="<?php echo esc_url( home_url( \'/\' ) ); ?>#cart">'
+    )
+    // Содержимое печатает PHP: разметка приходит готовой, и поисковику,
+    // и человеку без JS. Свой скрипт страницы убираем — на живом сайте
+    // тема подключает общий main.js, он и включает галерею со счётчиком
     .replace(
       /<main class="tovar" id="tovar">[\s\S]*?<\/main>/,
       '<main class="tovar" id="tovar"><?php olimp_product_page(); ?></main>'

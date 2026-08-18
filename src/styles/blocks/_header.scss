@@ -41,18 +41,5 @@
 }
 
 .header__count {
-  min-width: 22px;
-  height: 22px;
-  padding: 0 6px;
-  border-radius: 999px;
-  background: var(--accent);
-  color: #ffffff;
-  font-size: 12px;
-  font-weight: 800;
-  display: grid;
-  place-items: center;
-}
-
-.header__count[hidden] {
-  display: none;
+  @include count-bubble;
 }

@@ -9,9 +9,16 @@ import { PRODUCTS, CATEGORIES } from './data.js';
 import { esc, fmt } from './utils.js';
 import { specsHTML, sizeHTML } from './specs.js';
 import { galleryHTML, initGallery } from './gallery.js';
+import { initCartCount } from './cart.js';
+import { applyCatalogLinks } from './url-state.js';
 import { ORDER_PHONE, MAX_LINK } from './state.js';
 
 const root = document.getElementById('tovar');
+
+// Корзина набирается в каталоге и лежит в localStorage. Счётчик в полосе
+// сверху показывает её и здесь — иначе, уйдя в товар, человек перестаёт
+// видеть, что уже отложил. На живом сайте это же делает main.js.
+initCartCount();
 
 // Номер товара в адресе макета: tovar.html?tovar=101. На живом сайте эту
 // разметку печатает PHP, и скрипт здесь не участвует вовсе.
@@ -76,3 +83,8 @@ if (!product) {
   // чтобы вкладка не осталась подписанной словом «Товар»
   document.title = `${ product.name } — Мебельный склад «Олимп»`;
 }
+
+// После отрисовки, а не до: крошки с ссылкой «Каталог» появляются вместе
+// с остальной разметкой выше, и до этого момента подменять было бы нечего.
+// На живом сайте то же делает main.js — там разметку печатает PHP
+applyCatalogLinks();

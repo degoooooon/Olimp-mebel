@@ -14,9 +14,14 @@
 <body <?php body_class(); ?>>
 
 <header class="topbar">
-  <a class="topbar__back" href="./">
+  <a class="topbar__back" href="<?php echo esc_url( home_url( '/' ) ); ?>">
     <svg class="topbar__arrow" aria-hidden="true"><use href="<?php echo esc_url( olimp_sprite() ); ?>#i-arrow"/></svg>
     В каталог
+  </a>
+  <a class="topbar__cart" href="<?php echo esc_url( home_url( '/' ) ); ?>#cart">
+    <svg class="icon" aria-hidden="true"><use href="<?php echo esc_url( olimp_sprite() ); ?>#i-bag"/></svg>
+    Корзина
+    <span class="topbar__count" data-cart-count hidden>0</span>
   </a>
 </header>
 

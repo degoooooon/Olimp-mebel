@@ -132,7 +132,7 @@ function setAddBtnState(btn, inCart) {
   btn.innerHTML = `<svg class="icon add__icon" aria-hidden="true"><use href="${ SPRITE }#${ inCart ? 'i-check' : 'i-bag' }"/></svg>${ inCart ? 'В корзине' : 'В корзину'}`;
 }
 
-function openCart() {
+export function openCart() {
   // Отменяем отложенное скрытие: без этого таймер только что закрытой панели
   // спрятал бы уже открытую заново корзину
   clearTimeout(hideTimer);
@@ -227,6 +227,13 @@ function updateRow(row, qty) {
   if (dec.disabled && document.activeElement === dec) {
     row.querySelector('[data-act="inc"]').focus(); // не бросаем фокус на body
   }
+}
+
+// Счётчик есть и там, где панели нет: на странице товара он показывает,
+// что уже набрано, и ведёт ссылкой в каталог. Панель туда не переносим —
+// её разметка лежала бы в двух файлах.
+export function initCartCount() {
+  updateCartCount();
 }
 
 // Счётчик в шапке = суммарное количество штук

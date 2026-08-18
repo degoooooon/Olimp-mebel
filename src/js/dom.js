@@ -41,7 +41,11 @@ export const catsThumb = document.getElementById('cats-thumb');
 // Окно товара
 
 // Корзина: счётчик в шапке и выезжающая панель
-export const cartCount = document.getElementById('cart-count');
+// Счётчик стоит на двух страницах — в шапке каталога и в полосе страницы
+// товара. Атрибут вместо id: id обязан быть уникален в документе, и линтер
+// разметки считает страницы вместе, а класс у этих элементов разный —
+// они части разных блоков.
+export const cartCount = document.querySelector('[data-cart-count]');
 export const cartDrawer = document.getElementById('cart-drawer');
 export const cartOverlay = document.getElementById('cart-overlay');
 export const cartItems = document.getElementById('cart-items');

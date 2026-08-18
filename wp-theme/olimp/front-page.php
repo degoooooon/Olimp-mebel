@@ -97,7 +97,7 @@
     <button class="header__cart" type="button" id="cart-open" aria-haspopup="dialog" aria-controls="cart-drawer" aria-label="Корзина">
       <svg class="icon" aria-hidden="true"><use href="<?php echo esc_url( olimp_sprite() ); ?>#i-bag"/></svg>
       <span class="header__cart-label">Корзина</span>
-      <span class="header__count" id="cart-count" hidden>0</span>
+      <span class="header__count" data-cart-count hidden>0</span>
     </button>
   </div>
 </header>

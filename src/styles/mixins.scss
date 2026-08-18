@@ -13,3 +13,28 @@
     }
   }
 }
+
+// Пузырёк с количеством товаров в корзине. Один и тот же и в шапке каталога,
+// и в верхней полосе страницы товара — если развести по двум файлам, они
+// разойдутся при первой же правке цвета.
+//
+// display: grid вместо inline-flex — так цифра стоит по центру круга и по
+// вертикали тоже, без подгонки line-height под каждый размер шрифта.
+@mixin count-bubble {
+  min-width: 22px;
+  height: 22px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: var(--accent);
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 800;
+  display: grid;
+  place-items: center;
+
+  // Счётчик скрыт, пока корзина пуста. Без этого правила display: grid
+  // выше перебил бы hidden, и на странице висел бы кружок с нулём
+  &[hidden] {
+    display: none;
+  }
+}
