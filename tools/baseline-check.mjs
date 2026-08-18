@@ -24,6 +24,18 @@ for (const [id, f] of Object.entries(features)) {
   }
 }
 
+// Атрибуты разметки: у них свои ключи BCD, к свойствам CSS отношения нет
+const HTML_ATTRS = [
+  ['loading', 'html.elements.img.loading'],
+  ['inputmode', 'html.global_attributes.inputmode'],
+  ['srcset', 'html.elements.img.srcset'],
+  ['sizes', 'html.elements.img.sizes'],
+  ['decoding', 'html.elements.img.decoding'],
+  ['fetchpriority', 'html.elements.img.fetchpriority'],
+  ['popover', 'html.global_attributes.popover'],
+  ['enterkeyhint', 'html.global_attributes.enterkeyhint'],
+];
+
 const status = (id) => features[id]?.status?.baseline ?? null;
 const since = (id) => features[id]?.status?.baseline_high_date ?? '';
 
@@ -43,10 +55,22 @@ function walk(dir, ext) {
   return out;
 }
 
-// ─── Стили: свойства и @-правила ───
+// ─── Стили ───
+//
+// Смотрим и исходники, и собранный CSS темы. Собранный важнее: именно его
+// получает браузер, и там может оказаться то, чего в SCSS не было —
+// автопрефиксер дописывает свои варианты. Плюс встроенные стили из PHP:
+// в SCSS их нет вовсе, а на страницу они попадают.
 const cssUse = new Map(); // ключ BCD → где встретилось
 
-for (const file of walk('src/styles', /\.scss$/)) {
+const CSS_SOURCES = [
+  ...walk('src/styles', /\.scss$/),
+  ...(fs.existsSync('wp-theme/olimp/assets') ? walk('wp-theme/olimp/assets', /\.css$/) : []),
+  ...walk('wp-theme/olimp', /\.php$/),
+  ...walk('src', /\.html$/),
+];
+
+for (const file of CSS_SOURCES) {
   const text = fs.readFileSync(file, 'utf8');
 
   // Комментарии выкидываем: в них полно названий свойств из объяснений,
@@ -64,6 +88,16 @@ for (const file of walk('src/styles', /\.scss$/)) {
     const key = `css.properties.${ prop }`;
 
     if (byKey.has(key)) {
+      if (!cssUse.has(key)) {
+        cssUse.set(key, new Set());
+      }
+      cssUse.get(key).add(path.basename(file));
+    }
+  }
+
+  // Атрибуты разметки, за которыми стоят браузерные возможности
+  for (const [attr, key] of HTML_ATTRS) {
+    if (new RegExp(`\\b${ attr }=`).test(code) && byKey.has(key)) {
       if (!cssUse.has(key)) {
         cssUse.set(key, new Set());
       }

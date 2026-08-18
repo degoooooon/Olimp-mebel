@@ -9,7 +9,7 @@
     "dev": "vite",
     "dev:phone": "vite --host",
     "build": "vite build",
-    "build:theme": "vite build --mode theme",
+    "build:theme": "vite build --mode theme && node build/theme-zip.js",
     "preview": "vite preview",
     "lint": "npm run lint:js && npm run lint:css && npm run lint:html && npm run lint:editorconfig",
     "lint:js": "eslint src",
