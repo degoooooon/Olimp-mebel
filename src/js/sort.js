@@ -54,16 +54,41 @@ function close({ focusButton = true } = {}) {
   }
 }
 
-// Выбор пункта: обновляем подпись, состояние и сообщаем каталогу.
-// Событие «change» — то же имя, что у select, поэтому каталог слушает как раньше.
-function choose(index) {
+// Применяет выбор: значение, подпись на кнопке, состояние пунктов. Ни событий,
+// ни закрытия списка — этим и отличается от choose, и это нужно при
+// восстановлении сортировки из адреса, когда списка никто не открывал.
+function applyChoice(index) {
   const items = options();
   const picked = items[index];
   sortRoot.dataset.value = picked.dataset.value;
   sortValue.textContent = picked.textContent;
   items.forEach((el, i) => el.setAttribute('aria-selected', String(i === index)));
+}
+
+// Выбор пункта: обновляем подпись, состояние и сообщаем каталогу.
+// Событие «change» — то же имя, что у select, поэтому каталог слушает как раньше.
+function choose(index) {
+  applyChoice(index);
   close();
   sortRoot.dispatchEvent(new Event('change', { bubbles: true }));
+}
+
+/**
+ * Ставит сортировку молча, без события «change».
+ *
+ * Каталог зовёт это при чтении адреса, до первой отрисовки. Событие здесь
+ * было бы лишней перерисовкой: каталог и так нарисуется сразу после.
+ * Неизвестное значение игнорируем — в адрес его мог подставить кто угодно.
+ *
+ * @param {string} value Значение пункта: pop, asc, desc или new.
+ * @returns {void}
+ */
+export function setSort(value) {
+  const index = options().findIndex((el) => el.dataset.value === value);
+
+  if (index >= 0) {
+    applyChoice(index);
+  }
 }
 
 // Поиск по первым буквам — как в нативном списке: набираешь «сн», прыгает

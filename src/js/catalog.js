@@ -4,6 +4,8 @@ import { PRODUCTS, CATEGORIES } from './data.js';
 import { fmt, smooth, esc } from './utils.js';
 import { productUrl } from './product-url.js';
 import { cart } from './state.js';
+import { setSort } from './sort.js';
+import { readUrl, writeUrl, rememberReturn, takeReturn } from './url-state.js';
 import {
   SPRITE,
   grid, emptyEl, emptyReset, countEl, moreWrap, moreBtn,
@@ -44,6 +46,51 @@ function getState() {
   };
 }
 
+// ─── Состояние фильтров и адрес страницы ───
+
+// Значения для адреса берём из полей как есть, а не из getState: там цены уже
+// превращены в числа, а пустое поле — в бесконечность, и в адрес такое
+// не запишешь. Ключ razdel вместо cat — имя cat занято WordPress,
+// подробности в url-state.js.
+function urlValues() {
+  return {
+    razdel: form.elements.cat?.value ?? 'all',
+    q:      form.elements.q.value.trim(),
+    min:    priceMin.value,
+    max:    priceMax.value,
+    stock:  form.elements.stock.checked ? 'on' : '',
+    sort:   sortRoot.dataset.value,
+  };
+}
+
+// Раскладывает состояние из адреса по полям формы. Всё пришедшее проверяем:
+// параметры в адресе правит кто угодно, в том числе вручную.
+function applyUrl(state) {
+  // Категорию ищем перебором, а не селектором по значению из адреса: чужая
+  // строка внутри querySelector — это уже не поиск, а исполнение чужого
+  // выражения. Не нашли — включаем «Все», иначе ни один чип не отмечен
+  // и человек видит полный список без единой подсветки
+  const radios = [...form.querySelectorAll('input[name="cat"]')];
+  const picked = radios.find((r) => r.value === state.razdel)
+    ?? radios.find((r) => r.value === 'all');
+
+  if (picked) {
+    picked.checked = true;
+  }
+
+  // В поля цены пускаем только цифры: там type="number", и любая другая
+  // строка молча обнулила бы поле, оставив фильтр включённым в адресе
+  const digits = (v) => (/^\d{1,9}$/.test(v ?? '') ? v : '');
+  priceMin.value = digits(state.min);
+  priceMax.value = digits(state.max);
+
+  // Поиск — обычный текст в значении поля, разметкой он не станет
+  form.elements.q.value = state.q ?? '';
+  form.elements.stock.checked = 'on' === state.stock;
+
+  setSort(state.sort ?? 'pop');
+}
+
 // Если «от» больше «до», меняем поля местами. Правка видна человеку —
 // в отличие от молчаливого показа пустого каталога. На выдачу не влияет:
 // getState и так берёт меньшую и большую границы.
@@ -76,6 +123,16 @@ function filtered() {
 }
 
 // ─── Шаблон карточки ───
+
+// Возврат из товара: карточки рисуем без появления. Человек эти же карточки
+// только что видел, и повторный выезд с прозрачности читается как перезагрузка
+// сайта — тем сильнее, чем больше карточек раскрыто.
+//
+// Признак ставим на сами карточки, а не классом на сетку: класс с сетки
+// пришлось бы снимать через кадр после отрисовки, и это гонка. Здесь же
+// следующая перерисовка сама выдаст карточки с анимацией, снимать нечего.
+let instant = false;
+
 function badge(p) {
   if (p.old && Number.isFinite(p.price)) {
     return `<span class="badge badge--sale">−${ Math.round((1 - p.price / p.old) * 100) }%</span>`;
@@ -121,7 +178,7 @@ function cardHTML(p, i) {
   // туда же, куда название, и вторая остановка на том же адресе только
   // удлиняет путь с клавиатуры. Подпись читается с названия, она и так текст.
   return `
-  <article class="card" data-id="${p.id}" style="animation-delay:${Math.min(i * 45, 360)}ms">
+  <article class="card${instant ? ' card--instant' : ''}" data-id="${p.id}" style="animation-delay:${Math.min(i * 45, 360)}ms">
     <a class="card__media${p.photo ? ' card__media--photo' : ''}"
       href="${productUrl(p)}" tabindex="-1" aria-hidden="true">
       <span class="card__badges">${badge(p)}</span>
@@ -180,6 +237,11 @@ export function render() {
   shown = Math.min(PAGE, list.length);
   grid.innerHTML = list.slice(0, shown).map(cardHTML).join('');
   sync();
+  // Адрес обновляем здесь, а не в каждом обработчике: render зовут все, кто
+  // менял фильтры, и одна точка записи не разойдётся с выдачей.
+  // showMore адрес не трогает намеренно: сколько карточек раскрыто — не то,
+  // чем делятся ссылкой, и возврат восстановит это сам по номеру карточки
+  writeUrl(urlValues());
 }
 
 // Дорисовываем следующую порцию, не трогая показанные карточки: полная
@@ -197,6 +259,36 @@ function showMore() {
   if (wasFocused && moreWrap.hidden) {
     grid.querySelector(`.card[data-id="${ first.id }"] .card__media`)?.focus();
   }
+}
+
+// Возврат из товара: раскрываем список до той карточки, с которой ушли,
+// и подводим её под глаза. Без этого человек, ушедший из тридцатой позиции,
+// возвращался к первым двадцати четырём и листал заново.
+//
+// Ищем по номеру товара, а не по числу пикселей: выдача могла стать другой —
+// товар сняли с продажи, владелец переставил порядок, — и прежняя высота
+// прокрутки указывала бы в пустоту.
+function restorePosition(back) {
+  if (null === back) {
+    return;
+  }
+
+  const index = list.findIndex((p) => p.id === back.id);
+
+  if (index < 0) {
+    return;
+  }
+
+  while (shown <= index) {
+    showMore();
+  }
+
+  // instant, а не auto. Значение auto означает «как сказано в CSS», а там
+  // у html стоит scroll-behavior: smooth — страница ползла через полкаталога
+  // на глазах, и по дороге в неё вмешивалось восстановление прокрутки
+  // браузером: два движения складывались, и карточка проезжала мимо кадра
+  grid.querySelector(`.card[data-id="${ back.id }"]`)
+    ?.scrollIntoView({ block: 'center', behavior: 'instant' });
 }
 
 // ─── Инициализация: события каталога + первый рендер ───
@@ -230,6 +322,21 @@ export function initCatalog() {
 
   sortRoot.addEventListener('change', render);
 
+  // Запоминаем, с какой карточки ушли в товар. Слушаем сетку целиком: карточки
+  // перерисовываются на каждый фильтр, и подписка на каждую отвалилась бы
+  // при первой же перерисовке.
+  //
+  // Условие про ссылку обязательно: внутри карточки есть ещё кнопка «В корзину»,
+  // и после нажатия на неё никто никуда не уходит — запомненная позиция потом
+  // дёрнула бы каталог к чужой карточке
+  grid.addEventListener('click', (e) => {
+    const card = e.target.closest('.card');
+
+    if (card && e.target.closest('a[href]')) {
+      rememberReturn(Number(card.dataset.id));
+    }
+  });
+
   // Быстрые категории под героем. Слушаем ленту целиком, а не каждую плитку:
   // плитки рисует cats.js, и подписка на них зависела бы от того, чей init
   // отработал раньше
@@ -254,5 +361,16 @@ export function initCatalog() {
   // Стартовое состояние: в пустых полях подсказываем границы цен каталога
   priceMin.placeholder = PRICE_MIN === null ? '' : PRICE_MIN.toLocaleString('ru-RU');
   priceMax.placeholder = PRICE_MAX === null ? '' : PRICE_MAX.toLocaleString('ru-RU');
+
+  // Фильтры из адреса — до первой отрисовки: человек мог вернуться из товара
+  // или прийти по присланной ссылке на отобранный каталог
+  applyUrl(readUrl());
+
+  // О возврате узнаём тоже до отрисовки: анимация запускается в тот момент,
+  // когда карточка попадает в документ, и позже её уже не отменить
+  const back = takeReturn();
+  instant = null !== back;
   render();
+  restorePosition(back);
+  instant = false;
 }
