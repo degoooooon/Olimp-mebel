@@ -8,7 +8,8 @@
 // Раньше здесь были невидимые зоны наведения с линией-указателем сверху.
 // Убрано: наведение работает только с мышью, а угадать, что по кадру можно
 // водить, человек не может — подсказки никакой. Миниатюра сама себе подсказка.
-import { esc } from './utils.js';
+import { esc, spriteHref } from './utils.js';
+import { openZoom } from './zoom.js';
 
 const ACTIVE = 'gallery__photo--active';
 const ON = 'gallery__thumb--on';
@@ -27,13 +28,16 @@ export function galleryHTML(shots, alt, sizes) {
   }
 
   const name = esc(alt);
-
-  // Один снимок — ни миниатюр, ни стрелок: переключать нечего
-  if (1 === shots.length) {
-    return photo(shots[0], name, sizes, 0);
-  }
-
   const stage = shots.map((s, i) => photo(s, name, sizes, i)).join('');
+
+  // Один снимок — ни миниатюр, ни стрелок: переключать нечего. А обёртку
+  // печатаем всё равно: снимок лежит position: absolute, и без .gallery__stage
+  // ему не от чего отсчитывать inset — он растягивается на всю страницу.
+  // Ровно это и было на живом сайте у комода с единственной фотографией:
+  // «просто фотография на всю страницу, вёрстка ломается».
+  if (1 === shots.length) {
+    return `<div class="gallery"><div class="gallery__stage">${ stage }</div></div>`;
+  }
 
   // Стрелки — для телефона и планшета. Наведения там нет, а миниатюра
   // размером с ноготь на ходу попадается не с первого раза
@@ -55,12 +59,6 @@ export function galleryHTML(shots, alt, sizes) {
   </div>`;
 }
 
-// Адрес спрайта берём из уже стоящей на странице ссылки: в собранной версии
-// в имени файла хеш, и угадать его неоткуда
-function spriteHref() {
-  return document.querySelector('use[href*="spritemap"]')?.getAttribute('href').split('#')[0] ?? '';
-}
-
 function photo(s, name, sizes, i) {
   const srcset = s.srcset ? ` srcset="${ esc(s.srcset) }" sizes="${ esc(sizes) }"` : '';
 
@@ -79,6 +77,30 @@ export function initGallery(root) {
   for (const gallery of root.querySelectorAll('.gallery')) {
     const photos = [...gallery.querySelectorAll('.gallery__photo')];
     const thumbs = [...gallery.querySelectorAll('.gallery__thumb')];
+
+    // Увеличение вешаем до проверки на число снимков: у сорока товаров из
+    // сорока одного снимок единственный, и рассмотреть обивку нужно как раз
+    // там. Курсор-лупу даёт CSS, поэтому кадр и без подсказки выглядит нажимаемым
+    const stage = gallery.querySelector('.gallery__stage');
+
+    stage.addEventListener('click', (e) => {
+      // Кнопки-стрелки лежат внутри кадра, и нажатие по ним всплывает сюда.
+      // Без этой проверки покупатель на телефоне листал снимки стрелкой,
+      // а ему поверх каждого нажатия распахивалось увеличение
+      if (e.target.closest('.gallery__arrow')) {
+        return;
+      }
+
+      openZoom(photos, photos.findIndex((el) => el.classList.contains(ACTIVE)));
+    });
+
+    // Один снимок: ни миниатюр, ни стрелок в разметке нет, переключать нечего.
+    // Без этой проверки ниже падало бы на strip.scrollWidth — ряда миниатюр
+    // у такой галереи не существует, а падение унесло бы с собой всё,
+    // что идёт после вызова
+    if (thumbs.length < 2) {
+      continue;
+    }
 
     const show = (i) => {
       photos.forEach((el, n) => el.classList.toggle(ACTIVE, n === i));
@@ -109,12 +131,26 @@ export function initGallery(root) {
 
     // По кругу: с последнего снимка «вперёд» ведёт на первый. Иначе на краю
     // кнопка перестаёт отвечать, и это читается как поломка
-    gallery.querySelectorAll('.gallery__arrow').forEach((arrow) => {
-      arrow.addEventListener('click', () => {
-        const now = thumbs.findIndex((t) => t.classList.contains(ON));
+    const step = (shift) => {
+      const now = thumbs.findIndex((t) => t.classList.contains(ON));
 
-        show((now + Number(arrow.dataset.step) + photos.length) % photos.length);
-      });
+      show((now + shift + photos.length) % photos.length);
+    };
+
+    gallery.querySelectorAll('.gallery__arrow').forEach((arrow) => {
+      arrow.addEventListener('click', () => step(Number(arrow.dataset.step)));
+    });
+
+    // Стрелки на клавиатуре. Слушаем галерею, а не документ: событие всплывает
+    // от миниатюры или от кнопки-стрелки, то есть работает, когда человек
+    // и так внутри галереи. Слушать документ значило бы отбирать стрелки
+    // у прокрутки страницы, пока фокус где-то совсем в другом месте.
+    gallery.addEventListener('keydown', (e) => {
+      if ('ArrowLeft' === e.key) {
+        step(-1);
+      } else if ('ArrowRight' === e.key) {
+        step(1);
+      }
     });
   }
 }

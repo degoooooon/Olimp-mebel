@@ -1,0 +1,160 @@
+// ─── Увеличение снимка товара ───
+// Разметку создаёт zoom.js, в вёрстке её нет: галерею печатают два места,
+// и третья копия разошлась бы с ними.
+@use "../mixins" as *;
+
+.zoom {
+  // dialog по умолчанию сидит в потоке с автоматическими полями и рамкой.
+  // Здесь он занимает весь кадр целиком, поэтому сбрасываем и то и другое
+  position: fixed;
+  inset: 0;
+  max-width: 100%;
+  max-height: 100%;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  // Клик мимо снимка закрывает, и курсор об этом говорит
+  cursor: zoom-out;
+
+  // Раскладку получает только открытый, и это не придирка к порядку правил.
+  // Закрытый dialog браузер прячет своим служебным правилом через
+  // display: none, а безусловный display: grid его перебивал: после первого
+  // закрытия увеличение оставалось растянутым на весь экран — прозрачным,
+  // но перехватывающим все нажатия. Страница товара умирала целиком:
+  // не отвечали ни миниатюры, ни ссылка «В каталог».
+  //
+  // Фон при этом рисует ::backdrop, а диалог держит только сам снимок
+  &[open] {
+    display: grid;
+    place-items: center;
+  }
+}
+
+// Затемнение под диалогом. Своего слоя не делаем: браузер сам кладёт ::backdrop
+// поверх страницы и убирает его при закрытии
+.zoom::backdrop {
+  background: rgba(38, 34, 28, 0.92);
+}
+
+.zoom__photo {
+  max-width: 100%;
+  max-height: 100%;
+  // min-height: auto у элемента сетки означает «не меньше своего содержимого»,
+  // и это перебивало max-height: снимок 1600×1200 в окне 1280×900 занимал
+  // 1280×960, то есть на 60px выше экрана, и верх с низом кадра обрезались.
+  // Нули разрешают сжатие, и тогда ограничение выше вступает в силу
+  min-width: 0;
+  min-height: 0;
+  // Снимок показываем целиком, а не заполняем экран: увеличение затевалось
+  // ради того, чтобы разглядеть кадр, и обрезать его тут было бы прямо
+  // против смысла. Пропорции у снимков разные, поэтому поля неизбежны
+  object-fit: contain;
+  cursor: default;
+}
+
+.zoom__count {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  margin: 0;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: rgba(38, 34, 28, 0.6);
+  color: #ffffff;
+  font-size: 14px;
+}
+
+.zoom__close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.9);
+  cursor: pointer;
+
+  @include hover {
+    background: #ffffff;
+  }
+
+  .icon {
+    width: 20px;
+    height: 20px;
+    fill: var(--ink);
+  }
+}
+
+.zoom__arrow {
+  position: absolute;
+  top: 50%;
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  padding: 0;
+  translate: 0 -50%;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.85);
+  cursor: pointer;
+
+  @include hover {
+    background: #ffffff;
+  }
+}
+
+.zoom__arrow--prev {
+  left: 12px;
+}
+
+.zoom__arrow--next {
+  right: 12px;
+}
+
+// Иконка в спрайте смотрит вниз — доворачиваем на четверть в нужную сторону.
+// Отдельных иконок «влево» и «вправо» ради этого в спрайт не добавляем
+.zoom__chevron {
+  width: 18px;
+  height: 18px;
+  fill: var(--ink);
+}
+
+.zoom__arrow--prev .zoom__chevron {
+  rotate: 90deg;
+}
+
+.zoom__arrow--next .zoom__chevron {
+  rotate: -90deg;
+}
+
+// Единственный снимок листать некуда: ни стрелок, ни счётчика «1 из 1»
+.zoom--single .zoom__arrow,
+.zoom--single .zoom__count {
+  display: none;
+}
+
+// На узком экране кнопки съедают половину снимка — сдвигаем их к краям
+// и уменьшаем. Полностью убирать нельзя: без свайпа это единственный способ
+// переключить кадр на телефоне
+@media (max-width: 520px) {
+  .zoom__arrow {
+    width: 40px;
+    height: 40px;
+  }
+
+  .zoom__arrow--prev {
+    left: 4px;
+  }
+
+  .zoom__arrow--next {
+    right: 4px;
+  }
+}
