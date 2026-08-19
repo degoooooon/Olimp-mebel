@@ -1,7 +1,7 @@
 // ─── Каталог: фильтрация, карточки, отрисовка сетки ───
 // Переключатели категорий тоже собираются здесь — из общего списка CATEGORIES.
 import { PRODUCTS, CATEGORIES } from './data.js';
-import { fmt, smooth, esc } from './utils.js';
+import { fmt, smooth, esc, hit } from './utils.js';
 import { productUrl } from './product-url.js';
 import { cart } from './state.js';
 import { setSort } from './sort.js';
@@ -36,7 +36,7 @@ function getState() {
   const to = priceOf(priceMax, Infinity);
   return {
     cat:    data.get('cat') || 'all',
-    q:      (data.get('q') || '').trim().toLowerCase(),
+    q:      String(data.get('q') ?? '').trim().toLowerCase(),
     // Пока человек набирает число, «от» может ненадолго превысить «до» —
     // фильтруем по меньшей и большей границе, чтобы выдача не мигала пустотой
     min:    Math.min(from, to),
@@ -52,13 +52,20 @@ function getState() {
 // превращены в числа, а пустое поле — в бесконечность, и в адрес такое
 // не запишешь. Ключ razdel вместо cat — имя cat занято WordPress,
 // подробности в url-state.js.
+// Поле формы по имени. Через namedItem, а не form.elements.q: доступ по имени
+// в браузере работает, но в описании DOM его нет, и без приведения редактор
+// не подскажет ни value, ни checked и не поймает опечатку в имени поля.
+// Функцией, а не значением: на странице товара формы нет вовсе, и обращение
+// к form.elements при загрузке модуля уронило бы там всё, что идёт после.
+const field = (name) => /** @type {HTMLInputElement} */ (form.elements.namedItem(name));
+
 function urlValues() {
   return {
-    razdel: form.elements.cat?.value ?? 'all',
-    q:      form.elements.q.value.trim(),
+    razdel: field('cat')?.value ?? 'all',
+    q:      field('q').value.trim(),
     min:    priceMin.value,
     max:    priceMax.value,
-    stock:  form.elements.stock.checked ? 'on' : '',
+    stock:  field('stock').checked ? 'on' : '',
     sort:   sortRoot.dataset.value,
   };
 }
@@ -70,7 +77,7 @@ function applyUrl(state) {
   // строка внутри querySelector — это уже не поиск, а исполнение чужого
   // выражения. Не нашли — включаем «Все», иначе ни один чип не отмечен
   // и человек видит полный список без единой подсветки
-  const radios = [...form.querySelectorAll('input[name="cat"]')];
+  const radios = /** @type {HTMLInputElement[]} */ ([...form.querySelectorAll('input[name="cat"]')]);
   const picked = radios.find((r) => r.value === state.razdel)
     ?? radios.find((r) => r.value === 'all');
 
@@ -85,8 +92,8 @@ function applyUrl(state) {
   priceMax.value = digits(state.max);
 
   // Поиск — обычный текст в значении поля, разметкой он не станет
-  form.elements.q.value = state.q ?? '';
-  form.elements.stock.checked = 'on' === state.stock;
+  field('q').value = state.q ?? '';
+  field('stock').checked = 'on' === state.stock;
 
   setSort(state.sort ?? 'pop');
 }
@@ -116,7 +123,10 @@ function filtered() {
   switch (s.sort) {
     case 'asc': found.sort((a, b) => (a.price ?? Infinity) - (b.price ?? Infinity)); break;
     case 'desc': found.sort((a, b) => (b.price ?? -Infinity) - (a.price ?? -Infinity)); break;
-    case 'new': found.sort((a, b) => (b.isNew - a.isNew) || (b.pop - a.pop)); break;
+    // Через Number, а не вычитанием логических значений: true - false в JS
+    // даёт единицу, и сортировка работала, но такое выражение не читается
+    // как «сначала новинки», а редактор его вообще не понимает
+    case 'new': found.sort((a, b) => (Number(b.isNew) - Number(a.isNew)) || (b.pop - a.pop)); break;
     default: found.sort((a, b) => b.pop - a.pop);
   }
   return found;
@@ -133,6 +143,13 @@ function filtered() {
 // следующая перерисовка сама выдаст карточки с анимацией, снимать нечего.
 let instant = false;
 
+/**
+ * Плашка в углу карточки: скидка, новинка или хит. Одна, не несколько —
+ * три плашки на одной фотографии не выделяют ничего.
+ *
+ * @param {import('./data.js').Product} p Товар.
+ * @returns {string} Разметка плашки или пустая строка.
+ */
 function badge(p) {
   if (p.old && Number.isFinite(p.price)) {
     return `<span class="badge badge--sale">−${ Math.round((1 - p.price / p.old) * 100) }%</span>`;
@@ -153,10 +170,23 @@ function badge(p) {
 // 320px, на планшете — примерно половина ширины, на телефоне — почти вся.
 const SIZES = '(min-width: 1100px) 320px, (min-width: 640px) 45vw, 90vw';
 
+/**
+ * @param {import('./data.js').Product} p Товар.
+ * @returns {string} Атрибуты srcset и sizes или пустая строка,
+ *   если у товара один размер фотографии.
+ */
 function srcset(p) {
   return p.srcset ? ` srcset="${ esc(p.srcset) }" sizes="${ esc(p.sizes ?? SIZES) }"` : '';
 }
 
+/**
+ * Карточка товара для сетки каталога.
+ *
+ * @param {import('./data.js').Product} p Товар.
+ * @param {number} i Его номер в выдаче — от него считается задержка
+ *   появления, чтобы карточки выезжали каскадом, а не все разом.
+ * @returns {string} Разметка карточки.
+ */
 function cardHTML(p, i) {
   const inCart = cart.has(p.id);
   const addBtn = p.stock
@@ -258,6 +288,15 @@ function sync() {
   moreBtn.textContent = `Показать ещё ${ Math.min(PAGE, rest) }`;
 }
 
+/**
+ * Перерисовывает каталог по текущему состоянию фильтров.
+ *
+ * Единственная точка входа для всех, кто менял фильтры: она же пишет
+ * состояние в адрес страницы. Держать запись адреса в обработчиках значило
+ * бы иметь несколько источников правды — адрес разошёлся бы с выдачей.
+ *
+ * @returns {void}
+ */
 export function render() {
   list = filtered();
   shown = Math.min(PAGE, list.length);
@@ -283,7 +322,7 @@ function showMore() {
   // Последняя порция забирает кнопку с собой, а с ней и фокус — он свалился бы
   // в начало страницы. Переводим его на первую из дорисованных карточек.
   if (wasFocused && moreWrap.hidden) {
-    grid.querySelector(`.card[data-id="${ first.id }"] .card__media`)?.focus();
+    /** @type {HTMLElement} */ (grid.querySelector(`.card[data-id="${ first.id }"] .card__media`))?.focus();
   }
 }
 
@@ -317,7 +356,15 @@ function restorePosition(back) {
     ?.scrollIntoView({ block: 'center', behavior: 'instant' });
 }
 
-// ─── Инициализация: события каталога + первый рендер ───
+/**
+ * Подписывает каталог на события и рисует первую выдачу.
+ *
+ * Зовётся только на главной. На странице товара ни формы фильтров, ни сетки
+ * нет — обращение к ним при загрузке уронило бы скрипт целиком, и вместе
+ * с ним галерею снимков. Ровно это уже происходило на живом сайте.
+ *
+ * @returns {void}
+ */
 export function initCatalog() {
   // Переключатели заполняем до первого чтения формы: getState берёт категорию
   // из FormData, а в пустой форме её попросту нет
@@ -330,9 +377,10 @@ export function initCatalog() {
 
   // Переставляем границы при уходе из блока цены целиком, а не при переходе
   // между «от» и «до»: иначе поля дёргались бы посреди правки диапазона
-  const priceGroup = priceMin.closest('.price-range');
+  const priceGroup = /** @type {HTMLElement} */ (priceMin.closest('.price-range'));
+
   priceGroup.addEventListener('focusout', (e) => {
-    if (!priceGroup.contains(e.relatedTarget)) {
+    if (!priceGroup.contains(/** @type {Node} */ (e.relatedTarget))) {
       swapIfInverted();
     }
   });
@@ -356,9 +404,9 @@ export function initCatalog() {
   // и после нажатия на неё никто никуда не уходит — запомненная позиция потом
   // дёрнула бы каталог к чужой карточке
   grid.addEventListener('click', (e) => {
-    const card = e.target.closest('.card');
+    const card = hit(e, '.card');
 
-    if (card && e.target.closest('a[href]')) {
+    if (card && hit(e, 'a[href]')) {
       rememberReturn(Number(card.dataset.id));
     }
   });
@@ -367,11 +415,11 @@ export function initCatalog() {
   // плитки рисует cats.js, и подписка на них зависела бы от того, чей init
   // отработал раньше
   catsGrid.addEventListener('click', (e) => {
-    const btn = e.target.closest('[data-cat]');
+    const btn = hit(e, '[data-cat]');
     if (!btn) {
       return;
     }
-    const radio = form.querySelector(`input[name="cat"][value="${ btn.dataset.cat }"]`);
+    const radio = /** @type {HTMLInputElement} */ (form.querySelector(`input[name="cat"][value="${ btn.dataset.cat }"]`));
     if (radio) {
       radio.checked = true; render();
     }
@@ -381,7 +429,8 @@ export function initCatalog() {
   // Фильтры на мобильных
   filtersToggle.addEventListener('click', () => {
     const open = filtersPanel.classList.toggle('filters--open');
-    filtersToggle.setAttribute('aria-expanded', open);
+    // Через String: setAttribute принимает строку, а не логическое значение
+    filtersToggle.setAttribute('aria-expanded', String(open));
   });
 
   // Стартовое состояние: в пустых полях подсказываем границы цен каталога

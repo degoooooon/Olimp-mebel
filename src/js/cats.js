@@ -54,6 +54,11 @@ function scrollToPointer(e) {
   catsGrid.scrollLeft = Math.min(Math.max(pos, 0), 1) * max;
 }
 
+/**
+ * Рисует ленту быстрых категорий под героем и включает её прокрутку.
+ *
+ * @returns {void}
+ */
 export function initCats() {
   renderTiles();
 

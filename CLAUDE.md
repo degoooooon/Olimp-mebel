@@ -59,13 +59,19 @@ grep -c 'href="\./"' wp-theme/olimp/single-olimp_product.php # 0
 ## Перед «готово»
 
 ```bash
-npm run lint          # eslint + stylelint + linthtml + editorconfig
+npm run lint          # eslint + типы + stylelint + linthtml + editorconfig
 npm run build
 npm run build:theme
 ```
 
 Все три должны пройти. Ровно это же гоняет CI на каждый пуш
 (`.github/workflows/ci.yml`).
+
+Внутри `lint` есть шаг `lint:types` — это `tsc` по `jsconfig.json`, без
+TypeScript в проекте: он читает JSDoc в `src/js` и подчёркивает обращение
+к полю, которого у товара нет, или аргумент не того типа. Форма товара
+описана `@typedef` в начале `src/js/data.js` — там же, где сами данные,
+чтобы описание не разошлось с форматом из [docs/catalog-data.md](docs/catalog-data.md).
 
 ## Документация
 

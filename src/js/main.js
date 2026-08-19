@@ -53,11 +53,11 @@ if (isProductPage) {
 // помогает. Пока пользователь ничего не нажимал, любой появившийся фокус —
 // восстановленный браузером: гасим его. После первого реального ввода
 // (клик или клавиша) перестаём вмешиваться, чтобы не мешать навигации с Tab.
-const blurRestored = (e) => e.target.blur();
+const blurRestored = (e) => /** @type {HTMLElement} */ (e.target).blur();
 const stopFocusGuard = () => document.removeEventListener('focusin', blurRestored);
 
 if (document.activeElement && document.activeElement !== document.body) {
-  document.activeElement.blur(); // фокус успел восстановиться до запуска скрипта
+  /** @type {HTMLElement} */ (document.activeElement).blur(); // фокус успел восстановиться до запуска скрипта
 }
 document.addEventListener('focusin', blurRestored);
 window.addEventListener('pointerdown', stopFocusGuard, { once: true, capture: true });

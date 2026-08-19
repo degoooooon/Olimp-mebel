@@ -39,6 +39,7 @@ const RETURN_KEY = 'olimp-return-v1';
  */
 export function readUrl() {
   const params = new URLSearchParams(location.search);
+  /** @type {Record<string, string>} */
   const out = {};
 
   for (const key of Object.keys(DEFAULTS)) {
@@ -166,7 +167,11 @@ export function applyCatalogLinks() {
     return;
   }
 
-  for (const link of document.querySelectorAll('.topbar__back, .crumbs__link, .tovar__link')) {
+  const links = /** @type {NodeListOf<HTMLAnchorElement>} */ (
+    document.querySelectorAll('.topbar__back, .crumbs__link, .tovar__link')
+  );
+
+  for (const link of links) {
     link.href = saved.url;
   }
 }

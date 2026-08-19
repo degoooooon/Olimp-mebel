@@ -9,4 +9,8 @@
 // Поэтому фронтенд берёт url, если он есть, и падает обратно на макет,
 // если его нет. Так одна и та же карточка работает в обоих случаях.
 
+/**
+ * @param {import('./data.js').Product} p Товар.
+ * @returns {string} Адрес его страницы.
+ */
 export const productUrl = (p) => p.url ?? `./tovar.html?tovar=${ encodeURIComponent(p.id) }`;

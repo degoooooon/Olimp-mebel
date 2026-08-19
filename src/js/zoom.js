@@ -78,7 +78,9 @@ function build() {
 
   dialog.querySelector('.zoom__close').addEventListener('click', () => dialog.close());
 
-  dialog.querySelectorAll('.zoom__arrow').forEach((arrow) => {
+  // Приведение к HTMLElement: у каждой стрелки читаем dataset.step,
+  // а querySelectorAll обещает Element, у которого dataset нет
+  /** @type {NodeListOf<HTMLElement>} */ (dialog.querySelectorAll('.zoom__arrow')).forEach((arrow) => {
     arrow.addEventListener('click', () => step(Number(arrow.dataset.step)));
   });
 

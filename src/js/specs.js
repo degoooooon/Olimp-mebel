@@ -10,6 +10,11 @@ import { esc } from './utils.js';
 // поставщика к единому виду.
 const DIMS = ['Ширина, см', 'Глубина, см', 'Высота, см'];
 
+/**
+ * @param {Array<import('./data.js').Spec>} specs Характеристики товара.
+ * @returns {Array<import('./data.js').Spec>} Три габарита в порядке DIMS;
+ *   на месте ненайденного — undefined, и вызывающий обязан это проверить.
+ */
 const dims = (specs) => DIMS.map((n) => specs.find((s) => s.name === n));
 
 /**
@@ -22,7 +27,7 @@ const dims = (specs) => DIMS.map((n) => specs.find((s) => s.name === n));
  * Пусто, если нашлись не все три: два размера из трёх ничего не отвечают,
  * а выдумывать недостающий нельзя. Тогда всё остаётся в таблице как было.
  *
- * @param {{specs?: Array<{name: string, value: string}>}} p Товар.
+ * @param {import('./data.js').Product} p Товар.
  * @returns {string} Разметка или пустая строка.
  */
 export function sizeHTML(p) {
@@ -43,7 +48,7 @@ export function sizeHTML(p) {
  * Таблица характеристик. Пустая строка, если их нет: у части товаров
  * описание ещё не заполнили, и рисовать заголовок над пустотой незачем.
  *
- * @param {{specs?: Array<{name: string, value: string}>}} p Товар.
+ * @param {import('./data.js').Product} p Товар.
  * @returns {string} Разметка или пустая строка.
  */
 export function specsHTML(p) {

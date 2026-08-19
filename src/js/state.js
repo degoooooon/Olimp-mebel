@@ -20,9 +20,18 @@ function loadCart() {
   }
 }
 
-export const cart = loadCart(); // id товара → количество
+/** @type {Map<number, number>} id товара → количество */
+export const cart = loadCart();
 
-// Сохраняет корзину; вызывать после каждого изменения cart.
+/**
+ * Сохраняет корзину в localStorage. Зовётся после каждого изменения cart.
+ *
+ * Молча ничего не делает, если хранилище недоступно: в приватном режиме
+ * запись бросает исключение, и без перехвата оно унесло бы с собой всё
+ * добавление товара — а корзина в памяти при этом работает.
+ *
+ * @returns {void}
+ */
 export function saveCart() {
   try {
     localStorage.setItem(CART_KEY, JSON.stringify([...cart]));

@@ -4,8 +4,11 @@
 // поддерживается. Раз рисуем сами — берём на себя и всё, что нативный
 // элемент давал даром: клавиатуру, роли для скринридеров, закрытие.
 import { sortRoot, sortButton, sortValue, sortList } from './dom.js';
+import { hit } from './utils.js';
 
-const options = () => [...sortList.querySelectorAll('.sort__option')];
+// Приведение к HTMLElement обязательно: у каждого пункта читаем dataset.value,
+// а querySelectorAll обещает Element, у которого dataset нет вовсе
+const options = () => /** @type {HTMLElement[]} */ ([...sortList.querySelectorAll('.sort__option')]);
 
 let active = 0; // пункт под «курсором» списка, не обязательно выбранный
 let typed = ''; // накопленные буквы для поиска по первым символам
@@ -148,12 +151,17 @@ function onKeydown(e) {
   }
 }
 
+/**
+ * Включает свой список сортировки: мышь, клавиатура, закрытие по клику мимо.
+ *
+ * @returns {void}
+ */
 export function initSort() {
   sortButton.addEventListener('click', () => (isOpen() ? close() : open()));
   sortButton.addEventListener('keydown', onKeydown);
 
   sortList.addEventListener('click', (e) => {
-    const option = e.target.closest('.sort__option');
+    const option = hit(e, '.sort__option');
     if (option) {
       choose(options().indexOf(option));
     }
@@ -161,14 +169,14 @@ export function initSort() {
 
   // Подсветка следует за указателем, чтобы клавиатура и мышь не спорили
   sortList.addEventListener('pointermove', (e) => {
-    const option = e.target.closest('.sort__option');
+    const option = hit(e, '.sort__option');
     if (option) {
       setActive(options().indexOf(option));
     }
   });
 
   document.addEventListener('pointerdown', (e) => {
-    if (!sortRoot.contains(e.target)) {
+    if (!sortRoot.contains(/** @type {Node} */ (e.target))) {
       close({ focusButton: false });
     }
   });

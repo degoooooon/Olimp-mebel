@@ -8,7 +8,7 @@
 // Раньше здесь были невидимые зоны наведения с линией-указателем сверху.
 // Убрано: наведение работает только с мышью, а угадать, что по кадру можно
 // водить, человек не может — подсказки никакой. Миниатюра сама себе подсказка.
-import { esc, spriteHref } from './utils.js';
+import { esc, hit, spriteHref } from './utils.js';
 import { openZoom } from './zoom.js';
 
 const ACTIVE = 'gallery__photo--active';
@@ -17,7 +17,8 @@ const ON = 'gallery__thumb--on';
 /**
  * Разметка галереи.
  *
- * @param {Array<{photo: string, srcset?: string}>} shots Снимки товара.
+ * @param {Array<import('./data.js').Shot>} shots Снимки товара. Пустые
+ *   отброшены раньше, в data.js: у товара без файла снимка нет вовсе.
  * @param {string} alt Название товара для подписи.
  * @param {string} sizes Значение атрибута sizes под конкретную раскладку.
  * @returns {string} Разметка или пустая строка, если снимков нет.
@@ -70,13 +71,18 @@ function photo(s, name, sizes, i) {
 /**
  * Включает переключение внутри уже вставленной галереи.
  *
- * @param {HTMLElement} root Любой элемент, внутри которого искать галереи.
+ * @param {ParentNode} root Документ или элемент, внутри которого искать галереи.
  * @returns {void}
  */
 export function initGallery(root) {
-  for (const gallery of root.querySelectorAll('.gallery')) {
-    const photos = [...gallery.querySelectorAll('.gallery__photo')];
-    const thumbs = [...gallery.querySelectorAll('.gallery__thumb')];
+  // Приведения к HTML-типам: querySelectorAll обещает Element, а мы читаем
+  // у галереи события клавиатуры, у миниатюр dataset, а снимки отдаём
+  // в увеличение, где нужен именно HTMLImageElement
+  const galleries = /** @type {NodeListOf<HTMLElement>} */ (root.querySelectorAll('.gallery'));
+
+  for (const gallery of galleries) {
+    const photos = /** @type {HTMLImageElement[]} */ ([...gallery.querySelectorAll('.gallery__photo')]);
+    const thumbs = /** @type {HTMLElement[]} */ ([...gallery.querySelectorAll('.gallery__thumb')]);
 
     // Увеличение вешаем до проверки на число снимков: у сорока товаров из
     // сорока одного снимок единственный, и рассмотреть обивку нужно как раз
@@ -87,7 +93,7 @@ export function initGallery(root) {
       // Кнопки-стрелки лежат внутри кадра, и нажатие по ним всплывает сюда.
       // Без этой проверки покупатель на телефоне листал снимки стрелкой,
       // а ему поверх каждого нажатия распахивалось увеличение
-      if (e.target.closest('.gallery__arrow')) {
+      if (hit(e, '.gallery__arrow')) {
         return;
       }
 
@@ -137,7 +143,7 @@ export function initGallery(root) {
       show((now + shift + photos.length) % photos.length);
     };
 
-    gallery.querySelectorAll('.gallery__arrow').forEach((arrow) => {
+    /** @type {NodeListOf<HTMLElement>} */ (gallery.querySelectorAll('.gallery__arrow')).forEach((arrow) => {
       arrow.addEventListener('click', () => step(Number(arrow.dataset.step)));
     });
 

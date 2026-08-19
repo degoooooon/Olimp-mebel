@@ -12,6 +12,7 @@
 // Первый селектор — текстовая колонка героя: надзаголовок, заголовок, текст,
 // кнопки и цифры. Сцена героя лежит рядом, а не внутри колонки, и в каскад
 // не входит — её задержка задана в _hero.scss.
+/** @type {Array<[string, number]>} */
 const GROUPS = [
   ['.hero__inner > div > .reveal', 90],
   ['.cat', 60],
@@ -25,9 +26,17 @@ const MAX_DELAY = 600;
 // точка, что и «top 85%» у прежнего ScrollTrigger
 const MARGIN = '0px 0px -12% 0px';
 
+/**
+ * Включает появление блоков при прокрутке.
+ *
+ * Зовётся последним из всех init: к этому моменту плитки категорий уже
+ * нарисованы и попадут под наблюдение. Раньше — наблюдать было бы нечего.
+ *
+ * @returns {void}
+ */
 export function initReveal() {
   GROUPS.forEach(([selector, step]) => {
-    document.querySelectorAll(selector).forEach((el, i) => {
+    /** @type {NodeListOf<HTMLElement>} */ (document.querySelectorAll(selector)).forEach((el, i) => {
       el.style.setProperty('--reveal-delay', `${ Math.min(i * step, MAX_DELAY) }ms`);
     });
   });

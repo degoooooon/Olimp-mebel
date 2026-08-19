@@ -1,6 +1,6 @@
 // ─── Корзина: выезжающая панель, счётчик, оформление заказа ───
 import { PRODUCTS } from './data.js';
-import { fmt, smooth, esc } from './utils.js';
+import { fmt, smooth, esc, hit } from './utils.js';
 import { cart, saveCart, ORDER_PHONE, MAX_LINK } from './state.js';
 import {
   SPRITE,
@@ -80,8 +80,12 @@ function flashHint(message) {
 const FOCUSABLE = 'a[href], button:not(:disabled), input, select, textarea, [tabindex]:not([tabindex="-1"])';
 
 function focusablesInDrawer() {
+  // Приведение к HTMLElement не для красоты: querySelectorAll обещает Element,
+  // а у Element нет ни offsetParent, ни focus — зовём мы дальше и то, и другое
+  const all = /** @type {HTMLElement[]} */ ([...cartDrawer.querySelectorAll(FOCUSABLE)]);
+
   // offsetParent === null у скрытых через display:none — такие пропускаем
-  return [...cartDrawer.querySelectorAll(FOCUSABLE)].filter((el) => el.offsetParent !== null);
+  return all.filter((el) => el.offsetParent !== null);
 }
 
 // aria-modal="true" обещает, что фокус заперт внутри диалога. Без этого Tab
@@ -113,8 +117,17 @@ function syncAddButtons(id) {
   });
 }
 
-// Кладёт товар в корзину или убирает его. Общая точка для каталога,
-// окна товара и крестика в панели.
+/**
+ * Кладёт товар в корзину или убирает его.
+ *
+ * Общая точка для каталога, страницы товара и крестика в панели. Кнопок
+ * у одного товара может быть несколько на странице разом — поэтому после
+ * изменения приводятся в порядок все, а не та, по которой нажали.
+ *
+ * @param {number} id Номер товара. Именно число: в корзине ключи числовые,
+ *   и строка '42' из data-атрибута создала бы вторую запись того же товара.
+ * @returns {void}
+ */
 export function toggleInCart(id) {
   if (cart.has(id)) {
     cart.delete(id);
@@ -132,6 +145,11 @@ function setAddBtnState(btn, inCart) {
   btn.innerHTML = `<svg class="icon add__icon" aria-hidden="true"><use href="${ SPRITE }#${ inCart ? 'i-check' : 'i-bag' }"/></svg>${ inCart ? 'В корзине' : 'В корзину'}`;
 }
 
+/**
+ * Выдвигает панель корзины и запирает в ней фокус.
+ *
+ * @returns {void}
+ */
 export function openCart() {
   // Отменяем отложенное скрытие: без этого таймер только что закрытой панели
   // спрятал бы уже открытую заново корзину
@@ -160,6 +178,13 @@ function closeCart() {
 }
 
 // Строка товара в панели
+/**
+ * Строка товара в панели корзины.
+ *
+ * @param {import('./data.js').Product} p Товар.
+ * @param {number} qty Сколько штук набрано.
+ * @returns {string} Разметка строки.
+ */
 function cartItemHTML(p, qty) {
   const name = esc(p.name);
   return `
@@ -229,9 +254,15 @@ function updateRow(row, qty) {
   }
 }
 
-// Счётчик есть и там, где панели нет: на странице товара он показывает,
-// что уже набрано, и ведёт ссылкой в каталог. Панель туда не переносим —
-// её разметка лежала бы в двух файлах.
+/**
+ * Показывает счётчик корзины на странице, где панели нет.
+ *
+ * На странице товара счётчик говорит, что уже набрано, и ведёт ссылкой
+ * в каталог — панель выезжает там. Второй копии её разметки в проекте нет:
+ * две копии разошлись бы, вопрос только в сроке.
+ *
+ * @returns {void}
+ */
 export function initCartCount() {
   updateCartCount();
 }
@@ -242,15 +273,24 @@ function updateCartCount() {
   cart.forEach((q) => {
     n += q;
   });
-  cartCount.textContent = n;
+  // Через String, а не числом: textContent принимает строку, и браузер
+  // приводит сам — но тогда подстановку числа не проверить заранее
+  cartCount.textContent = String(n);
   cartCount.hidden = n === 0;
 }
 
-// ─── Инициализация: события корзины ───
+/**
+ * Подписывает корзину на события: кнопки в карточках, панель, клавиатура.
+ *
+ * Зовётся только на главной — панели корзины на странице товара нет,
+ * там работает один initCartCount.
+ *
+ * @returns {void}
+ */
 export function initCart() {
   // Кнопка «В корзину» в карточках каталога
   grid.addEventListener('click', (e) => {
-    const addBtn = e.target.closest('[data-add]');
+    const addBtn = hit(e, '[data-add]');
     if (addBtn) {
       toggleInCart(+addBtn.dataset.add);
     }
@@ -258,17 +298,17 @@ export function initCart() {
 
   // Клики внутри панели: плюс/минус/убрать
   cartItems.addEventListener('click', (e) => {
-    const btn = e.target.closest('[data-act]');
+    const btn = hit(e, '[data-act]');
     if (!btn) {
       return;
     }
-    const row = btn.closest('.ci');
+    const row = /** @type {HTMLElement} */ (btn.closest('.ci'));
     const id = +row.dataset.id;
     const { act } = btn.dataset;
 
     if (act === 'rm') {
       // Соседа запоминаем до перерисовки: текущая строка сейчас исчезнет
-      const neighbour = row.nextElementSibling || row.previousElementSibling;
+      const neighbour = /** @type {HTMLElement} */ (row.nextElementSibling || row.previousElementSibling);
       const neighbourId = neighbour && neighbour.dataset.id;
       cart.delete(id);
       saveCart();
@@ -278,7 +318,10 @@ export function initCart() {
       // renderCart пересоздаёт строки — фокус упал бы на body, за пределы
       // диалога. Переводим на соседний товар, а если корзина опустела —
       // на кнопку закрытия.
-      const nextBtn = neighbourId && cartItems.querySelector(`.ci[data-id="${ neighbourId }"] [data-act="rm"]`);
+      const nextBtn = neighbourId
+        ? /** @type {HTMLElement} */ (cartItems.querySelector(`.ci[data-id="${ neighbourId }"] [data-act="rm"]`))
+        : null;
+
       (nextBtn || cartClose).focus();
       return;
     }
