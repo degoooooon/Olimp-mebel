@@ -79,6 +79,31 @@ jobs:
           sed -i 's|<meta name="viewport"|<meta name="robots" content="noindex, nofollow">\n<meta name="viewport"|' dist/index.html
           grep -q 'name="robots" content="noindex' dist/index.html
 
+      # Справочник по модулям собирается из тех же комментариев JSDoc, что
+      # проверяет lint:types. Отдельно его не поддерживают — он пересобирается
+      # здесь на каждый пуш и поэтому не может отстать от кода.
+      - name: Build reference
+        run: npm run docs
+
+      # Кладём справочник внутрь копии сайта: у Pages один адрес на репозиторий,
+      # вторым сайтом его не выложить. Ляжет по /docs/.
+      #
+      # Закрываем от индексации так же, как главную: это рабочий материал
+      # по чужому магазину, в поиске ему делать нечего. Проверяем счётом,
+      # а не на глаз — sed молча пропускает файл, где строка не нашлась,
+      # и одна страница ушла бы в поиск открытой.
+      - name: Put the reference into the copy
+        run: |
+          mkdir -p dist/docs
+          cp -r docs-site/. dist/docs/
+          find dist/docs -name '*.html' -exec \
+            sed -i 's|<head>|<head><meta name="robots" content="noindex, nofollow">|' {} +
+          total=$(find dist/docs -name '*.html' | wc -l)
+          closed=$(grep -rl 'name="robots" content="noindex' dist/docs --include='*.html' | wc -l)
+          echo "страниц справочника: $total, закрыто от поиска: $closed"
+          test "$total" -eq "$closed"
+          test "$total" -gt 0
+
       - name: Configure Pages
         uses: actions/configure-pages@v6.0.0
 

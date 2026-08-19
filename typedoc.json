@@ -1,0 +1,69 @@
+{
+  "$schema": "https://typedoc.org/schema.json",
+  "entryPoints": [
+    "src/js"
+  ],
+  "entryPointStrategy": "expand",
+  "tsconfig": "jsconfig.json",
+  "out": "docs-site",
+  "name": "Каталог «Олимп» — справочник по модулям",
+  "lang": "ru",
+  "readme": "docs/reference-intro.md",
+  "excludePrivate": false,
+  "excludeInternal": true,
+  "includeVersion": false,
+  "hideGenerator": false,
+  "searchInComments": true,
+  "navigationLinks": {
+    "Сайт": "https://olimp-mebel26.ru",
+    "Репозиторий": "https://github.com/degoooooon/Olimp-mebel"
+  },
+  "validation": {
+    "notExported": false,
+    "invalidLink": true,
+    "notDocumented": false
+  },
+  "locales": {
+    "ru": {
+      "kind_plural_module": "Модули",
+      "kind_module": "Модуль",
+      "kind_plural_function": "Функции",
+      "kind_function": "Функция",
+      "kind_plural_variable": "Значения",
+      "kind_variable": "Значение",
+      "kind_plural_interface": "Типы данных",
+      "kind_interface": "Тип данных",
+      "kind_plural_type_alias": "Псевдонимы типов",
+      "kind_type_alias": "Псевдоним типа",
+      "kind_plural_property": "Поля",
+      "kind_property": "Поле",
+      "kind_plural_parameter": "Параметры",
+      "kind_parameter": "Параметр",
+      "kind_plural_namespace": "Пространства имён",
+      "kind_namespace": "Пространство имён",
+      "theme_returns": "Возвращает",
+      "theme_defined_in": "Объявлено в",
+      "theme_index": "Содержание",
+      "theme_on_this_page": "На этой странице",
+      "theme_settings": "Настройки",
+      "theme_member_visibility": "Что показывать",
+      "theme_theme": "Оформление",
+      "theme_light": "Светлое",
+      "theme_dark": "Тёмное",
+      "theme_os": "Как в системе",
+      "theme_menu": "Меню",
+      "theme_search": "Поиск",
+      "theme_search_placeholder": "Искать по коду…",
+      "theme_preparing_search_index": "Готовим поиск…",
+      "theme_search_index_not_available": "Поиск недоступен",
+      "theme_loading": "Загрузка…",
+      "theme_hierarchy": "Иерархия",
+      "theme_normally_hidden": "Обычно скрыто",
+      "theme_copy": "Скопировать",
+      "theme_copied": "Скопировано",
+      "theme_permalink": "Ссылка на этот раздел",
+      "theme_type_declaration": "Описание типа",
+      "theme_generated_using_typedoc": "Собрано TypeDoc из комментариев в коде"
+    }
+  }
+}
