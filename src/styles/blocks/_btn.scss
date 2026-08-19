@@ -4,6 +4,11 @@
 
 .btn {
   display: inline-flex;
+  // Скрытую кнопку прячем явно. Атрибут hidden браузер применяет как
+  // display: none правилом с низким приоритетом, и строка выше его перебивает:
+  // кнопка «Сбросить фильтры» оставалась на экране при пустом каталоге, где
+  // сбрасывать нечего. Та же ошибка уже была со счётчиком корзины — пузырёк
+  // с нулём висел при пустой корзине, и лечилась она так же.
   align-items: center;
   justify-content: center;
   gap: 10px;
@@ -13,6 +18,10 @@
   font-weight: 700;
   font-size: 15px;
   transition: background-color 0.2s, color 0.2s, border-color 0.2s;
+
+  &[hidden] {
+    display: none;
+  }
 }
 
 .btn--primary {

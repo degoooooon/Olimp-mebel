@@ -221,11 +221,37 @@ let list = []; // вся текущая выдача
 let shown = 0; // сколько карточек уже в сетке
 
 // Счётчик, пустое состояние и кнопка — всё зависит от той же пары чисел
+// Пустая витрина бывает двух видов, и путать их нельзя. «Под фильтры ничего
+// не подошло» лечится сбросом, а «в каталоге нет товаров» — только загрузкой
+// товаров в админке. Совет смягчить условия во втором случае отправляет
+// человека крутить фильтры впустую, а кнопка сброса ничего не изменит.
+//
+// Случай не выдуманный: подрядчик удалил товары из WordPress, каталог приехал
+// пустым, и витрина предлагала поднять планку цены.
+const EMPTY_TEXTS = {
+  filtered: {
+    title: 'Ничего не нашлось',
+    text: 'Попробуйте смягчить условия — например, поднять планку цены или убрать часть фильтров.',
+  },
+  nothing: {
+    title: 'Каталог пока пуст',
+    text: 'Товары скоро появятся. Позвоните нам — расскажем, что есть на складе прямо сейчас.',
+  },
+};
+
 function sync() {
   countEl.innerHTML = `Показано: <b class="toolbar__found">${ shown }</b> из ${ list.length }`;
   const isEmpty = list.length === 0;
   grid.classList.toggle('grid--hidden', isEmpty);
   emptyEl.classList.toggle('empty--show', isEmpty);
+
+  if (isEmpty) {
+    const kind = PRODUCTS.length ? 'filtered' : 'nothing';
+    emptyEl.querySelector('.empty__title').textContent = EMPTY_TEXTS[kind].title;
+    emptyEl.querySelector('.empty__text').textContent = EMPTY_TEXTS[kind].text;
+    // Сбрасывать нечего, когда товаров нет вовсе
+    emptyReset.hidden = 'nothing' === kind;
+  }
 
   const rest = list.length - shown;
   moreWrap.hidden = rest <= 0;
